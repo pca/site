@@ -1,50 +1,118 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import Dropdown from './ui/Dropdown';
 import { List, BarChart } from 'lucide-react';
+import "@fontsource/rubik";
 
-interface Ranking {
-  position: number;
+// Add API URL constant
+const PCA_API_URL = 'https://api.pinoycubers.org';
+
+// Update the interfaces to match API response
+interface Competition {
+  id: string;
   name: string;
-  result: string;
-  competition: string;
 }
 
-const rankings: Ranking[] = [
-  { position: 1, name: "Sean Patrick Villanueva", result: "4.11", competition: "Valenzuela Cubing Open 2023" },
-  { position: 2, name: "Leo Borromeo", result: "4.31", competition: "Cebu New Year Open 2023" },
-  { position: 3, name: "Toby Litiatco", result: "4.40", competition: "Cavite Speedcubing Open VI 2023" },
-  { position: 4, name: "Brenton Angelo Lo Wong", result: "4.42", competition: "Let's Cube Laguna 2023" },
-  { position: 5, name: "Jay Benedict Alfaras", result: "5.12", competition: "Bacolod Cubing Quest 2018" },
-  { position: 6, name: "Crimson Arradaza", result: "5.29", competition: "Imus Speedcubing Open 2024" },
-  { position: 7, name: "Karl Matthew Angeles", result: "5.34", competition: "Baguio Speedcubing Open 2023" },
+interface Event {
+  id: string;
+  name: string;
+  rank: number;
+  format: string;
+  cell_name: string;
+}
+
+interface Solves {
+  value1: string;
+  value2: string;
+  value3: string;
+  value4: string;
+  value5: string;
+}
+
+interface Ranking {
+  competition: Competition;
+  event: Event;
+  value: string;
+  person_name: string;
+  wca_id: string;
+  solves: Solves;
+}
+
+// Add the region options
+const regionOptions = [
+  { value: 'Philippines', label: 'Philippines' },
+  { value: 'NCR', label: 'NCR (Luzon - Metro Manila)' },
+  { value: 'CAR', label: 'CAR (Luzon - Cordillera Region)' },
+  { value: 'Region-I', label: 'Region I (Luzon - Ilocos Region)' },
+  { value: 'Region-II', label: 'Region II (Luzon - Cagayan Valley)' },
+  { value: 'Region-III', label: 'Region III (Luzon - Central Luzon)' },
+  { value: 'Region-IV-A', label: 'Region IV-A (Luzon - Calabarzon)' },
+  { value: 'Region-IV-B', label: 'Region IV-B (Luzon - Mimaropa)' },
+  { value: 'Region-V', label: 'Region V (Luzon - Bicol Region)' },
+  { value: 'Region-VI', label: 'Region VI (Visayas - Western Visayas)' },
+  { value: 'Region-VII', label: 'Region VII (Visayas - Central Visayas)' }
 ];
 
+// Update cube events to match API format
 const cubeEvents = [
-  "2x2x2", "3x3x3", "4x4x4", "5x5x5", "6x6x6", "7x7x7",
-  "3x3x3 Blindfolded", "3x3x3 One-Handed", "Clock", "Megaminx",
-  "Pyraminx", "Skewb", "Square-1", "4x4x4 Blindfolded",
-  "5x5x5 Blindfolded", "3x3x3 Multi-Blind"
+  { id: "222", name: "2x2x2" },
+  { id: "333", name: "3x3x3" },
+  { id: "444", name: "4x4x4" },
+  { id: "555", name: "5x5x5" },
+  { id: "666", name: "6x6x6" },
+  { id: "777", name: "7x7x7" },
+  { id: "333bf", name: "3x3x3 Blindfolded" },
+  { id: "333oh", name: "3x3x3 One-Handed" },
+  { id: "clock", name: "Clock" },
+  { id: "minx", name: "Megaminx" },
+  { id: "pyram", name: "Pyraminx" },
+  { id: "skewb", name: "Skewb" },
+  { id: "sq1", name: "Square-1" },
+  { id: "444bf", name: "4x4x4 Blindfolded" },
+  { id: "555bf", name: "5x5x5 Blindfolded" },
+  { id: "333mbf", name: "3x3x3 Multi-Blind" }
 ];
 
 export default function Rankings() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(true);
-  const [selectedRegion, setSelectedRegion] = useState('Philippines');
+  const [selectedRegion, setSelectedRegion] = useState(['national', '/']);
+  const [selectedEvent, setSelectedEvent] = useState('333');
   const [viewType, setViewType] = useState<'single' | 'average'>('single');
+  const [isLoading, setIsLoading] = useState(true);
+  const [rankings, setRankings] = useState<Ranking[]>([]);
 
-  const regionOptions = [
-    { value: 'Philippines', label: 'Philippines' },
-    { value: 'NCR', label: 'NCR (Luzon - Metro Manila)' },
-    { value: 'CAR', label: 'CAR (Luzon - Cordillera Region)' },
-    { value: 'Region-I', label: 'Region I (Luzon - Ilocos Region)' },
-    { value: 'Region-II', label: 'Region II (Luzon - Cagayan Valley)' },
-    { value: 'Region-III', label: 'Region III (Luzon - Central Luzon)' },
-    { value: 'Region-IV-A', label: 'Region IV-A (Luzon - Calabarzon)' },
-    { value: 'Region-IV-B', label: 'Region IV-B (Luzon - Mimaropa)' },
-    { value: 'Region-V', label: 'Region V (Luzon - Bicol Region)' },
-    { value: 'Region-VI', label: 'Region VI (Visayas - Western Visayas)' },
-    { value: 'Region-VII', label: 'Region VII (Visayas - Central Visayas)' },
-  ];
+  // Fetch rankings when filters change
+  useEffect(() => {
+    setIsLoading(true);
+    axios
+      .get(
+        `${PCA_API_URL}/rankings/${selectedRegion[0]}-${viewType}${selectedRegion[1]}${selectedEvent}`
+      )
+      .then(res => {
+        setRankings(res.data);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching rankings:', error);
+        setIsLoading(false);
+      });
+  }, [selectedEvent, viewType, selectedRegion]);
+
+  const handleRegionChange = (value: string) => {
+    let formattedRegion = "/";
+    let nationalOrRegional = "national";
+    
+    if (value === "Philippines") {
+      formattedRegion = "/";
+      nationalOrRegional = "national";
+    } else {
+      formattedRegion = `/${value}/`;
+      nationalOrRegional = "regional";
+    }
+    
+    setSelectedRegion([nationalOrRegional, formattedRegion]);
+  };
 
   return (
     <section className="py-20 bg-gray-50">
@@ -77,12 +145,15 @@ export default function Rankings() {
 
         {/* Event Icons */}
         <div className="grid grid-cols-8 gap-4 mb-8">
-          {cubeEvents.map((event, index) => (
+          {cubeEvents.map((event) => (
             <button
-              key={index}
-              className="aspect-square bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-2 flex items-center justify-center"
+              key={event.id}
+              onClick={() => setSelectedEvent(event.id)}
+              className={`aspect-square rounded-lg shadow-sm hover:shadow-md transition-shadow p-2 flex items-center justify-center ${
+                selectedEvent === event.id ? 'bg-yellow-300' : 'bg-white'
+              }`}
             >
-              <span className="text-xs text-center text-gray-600">{event}</span>
+              <span className="text-xs text-center text-gray-600 font-rubik">{event.name}</span>
             </button>
           ))}
         </div>
@@ -121,8 +192,8 @@ export default function Rankings() {
               Region
             </label>
             <Dropdown
-              value={selectedRegion}
-              onChange={(value) => setSelectedRegion(value)}
+              value={selectedRegion[1].replace('/', '') || 'Philippines'}
+              onChange={handleRegionChange}
               options={regionOptions}
               className="w-full md:w-[300px]"
             />
@@ -131,42 +202,48 @@ export default function Rankings() {
 
         {/* Rankings Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Result
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Competition
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {rankings.map((ranking) => (
-                <tr key={ranking.position} className={ranking.position % 2 === 0 ? 'bg-gray-50' : ''}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ranking.position}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{ranking.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ranking.result}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ranking.competition}
-                  </td>
+          {isLoading ? (
+            <div className="p-8 text-center text-gray-500">Loading rankings...</div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    #
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Result
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Competition
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rankings.map((ranking, index) => (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {ranking.person_name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {ranking.value}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {ranking.competition.name}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </section>

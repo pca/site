@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/rubik": "^5.1.0",
     "@radix-ui/react-tabs": "^1.0.4",
+    "axios": "^1.7.7",
     "clsx": "^2.1.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
