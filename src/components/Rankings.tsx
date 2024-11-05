@@ -56,23 +56,33 @@ const regionOptions = [
 
 // Update cube events to match API format
 const cubeEvents = [
-  { id: "222", name: "2x2x2" },
-  { id: "333", name: "3x3x3" },
-  { id: "444", name: "4x4x4" },
-  { id: "555", name: "5x5x5" },
-  { id: "666", name: "6x6x6" },
-  { id: "777", name: "7x7x7" },
-  { id: "333bf", name: "3x3x3 Blindfolded" },
-  { id: "333oh", name: "3x3x3 One-Handed" },
-  { id: "clock", name: "Clock" },
-  { id: "minx", name: "Megaminx" },
-  { id: "pyram", name: "Pyraminx" },
-  { id: "skewb", name: "Skewb" },
-  { id: "sq1", name: "Square-1" },
-  { id: "444bf", name: "4x4x4 Blindfolded" },
-  { id: "555bf", name: "5x5x5 Blindfolded" },
-  { id: "333mbf", name: "3x3x3 Multi-Blind" }
+  { id: "222", name: "2x2x2", icon: "/images/222.svg" },
+  { id: "333", name: "3x3x3", icon: "/images/333.svg" },
+  { id: "444", name: "4x4x4", icon: "/images/444.svg" },
+  { id: "555", name: "5x5x5", icon: "/images/555.svg" },
+  { id: "666", name: "6x6x6", icon: "/images/666.svg" },
+  { id: "777", name: "7x7x7", icon: "/images/777.svg" },
+  { id: "333bf", name: "3x3x3 Blindfolded", icon: "/images/333bf.svg" },
+  { id: "333oh", name: "3x3x3 One-Handed", icon: "/images/333oh.svg" },
+  { id: "clock", name: "Clock", icon: "/images/clock.svg" },
+  { id: "minx", name: "Megaminx", icon: "/images/minx.svg" },
+  { id: "pyram", name: "Pyraminx", icon: "/images/pyram.svg" },
+  { id: "skewb", name: "Skewb", icon: "/images/skewb.svg" },
+  { id: "sq1", name: "Square-1", icon: "/images/sq1.svg" },
+  { id: "444bf", name: "4x4x4 Blindfolded", icon: "/images/444bf.svg" },
+  { id: "555bf", name: "5x5x5 Blindfolded", icon: "/images/555bf.svg" },
+  { id: "333mbf", name: "3x3x3 Multi-Blind", icon: "/images/333mbo.svg" }
 ];
+
+// First, add this new component above the main Rankings component
+const SelectedEventDisplay = ({ event }: { event: string }) => {
+  const selectedEvent = cubeEvents.find(e => e.id === event);
+  return (
+    <div className="text-sm font-medium text-gray-700 mb-4">
+      Selected Event: {selectedEvent?.name}
+    </div>
+  );
+};
 
 export default function Rankings() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(true);
@@ -115,11 +125,8 @@ export default function Rankings() {
   };
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">
-          Regional Rankings
-        </h2>
 
         {/* Login Prompt */}
         {showLoginPrompt && (
@@ -144,18 +151,28 @@ export default function Rankings() {
         )}
 
         {/* Event Icons */}
-        <div className="grid grid-cols-8 gap-4 mb-8">
-          {cubeEvents.map((event) => (
-            <button
-              key={event.id}
-              onClick={() => setSelectedEvent(event.id)}
-              className={`aspect-square rounded-lg shadow-sm hover:shadow-md transition-shadow p-2 flex items-center justify-center ${
-                selectedEvent === event.id ? 'bg-yellow-300' : 'bg-white'
-              }`}
-            >
-              <span className="text-xs text-center text-gray-600 font-rubik">{event.name}</span>
-            </button>
-          ))}
+        <div className="mb-8">
+          <SelectedEventDisplay event={selectedEvent} />
+          <div className="flex flex-wrap gap-2">
+            {cubeEvents.map((event) => (
+              <button
+                key={event.id}
+                onClick={() => setSelectedEvent(event.id)}
+                className={`p-2 rounded-md transition-colors ${
+                  selectedEvent === event.id 
+                    ? 'bg-yellow-300' 
+                    : 'bg-white hover:bg-gray-50'
+                }`}
+                title={event.name}
+              >
+                <img
+                  src={event.icon}
+                  alt={event.name}
+                  className="w-6 h-6"
+                />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* View Type Tabs and Region Selector */}
