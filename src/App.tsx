@@ -1,7 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Community from './pages/Community';
+import Competitions from './pages/Competitions';
+import Rankings from './pages/Rankings';
 import Resources from './pages/Resources';
 import Meet from './pages/Meet';
 
@@ -11,7 +12,8 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/community" element={<Community />} />
+        <Route path="/competitions" element={<Competitions />} />
+        <Route path="/rankings" element={<Rankings />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/meet" element={<Meet />} />
       </Routes>

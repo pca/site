@@ -1,4 +1,174 @@
-import { Facebook, Users, Calendar, Store, MessageSquare } from 'lucide-react';
+import { Facebook, Users, Calendar, Store, MessageSquare, MapPin, Search, List, Map as MapIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icons in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+interface Meetup {
+  id: string;
+  name: string;
+  host: string;
+  wcaId?: string;
+  date: string;
+  time: string;
+  city: string;
+  venue: string;
+  contact: string;
+  lat: number;
+  lng: number;
+}
+
+const sampleMeetups: Meetup[] = [
+  {
+    id: '1',
+    name: 'Weekend Cube Meetup',
+    host: 'Juan Dela Cruz',
+    wcaId: '2019CRUZ01',
+    date: '2024-04-20',
+    time: '14:00',
+    city: 'Manila',
+    venue: 'SM North EDSA The Block',
+    contact: 'FB: juan.cruz / 09123456789',
+    lat: 14.6577,
+    lng: 121.0307,
+  },
+  {
+    id: '2',
+    name: 'Cebu Cubers Hangout',
+    host: 'Maria Santos',
+    date: '2024-04-21',
+    time: '13:00',
+    city: 'Cebu',
+    venue: 'Ayala Center Cebu',
+    contact: 'FB: maria.santos / 09187654321',
+    lat: 10.3157,
+    lng: 123.8854,
+  },
+];
+
+function MeetupsView() {
+  const [view, setView] = useState<'list' | 'map'>('list');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredMeetups, setFilteredMeetups] = useState(sampleMeetups);
+
+  useEffect(() => {
+    const filtered = sampleMeetups.filter(meetup => 
+      meetup.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      meetup.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      meetup.host.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredMeetups(filtered);
+  }, [searchTerm]);
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Search and View Toggle */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search meetups..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setView('list')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+                view === 'list' 
+                  ? 'bg-yellow-300 text-gray-900' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <List size={20} />
+              List
+            </button>
+            <button
+              onClick={() => setView('map')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+                view === 'map' 
+                  ? 'bg-yellow-300 text-gray-900' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <MapIcon size={20} />
+              Map
+            </button>
+          </div>
+        </div>
+
+        {/* View Content */}
+        {view === 'list' ? (
+          <div className="space-y-4">
+            {filteredMeetups.map(meetup => (
+              <div key={meetup.id} className="bg-gray-50 rounded-lg p-4 flex items-start gap-4">
+                <div className="bg-yellow-300 rounded-lg p-3">
+                  <Calendar className="text-gray-900" size={24} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">{meetup.name}</h3>
+                  <p className="text-gray-600">Host: {meetup.host} {meetup.wcaId && `(${meetup.wcaId})`}</p>
+                  <p className="text-gray-600">{meetup.date} at {meetup.time}</p>
+                  <div className="flex items-center gap-1 mt-2 text-gray-600">
+                    <MapPin size={16} />
+                    <span>{meetup.venue}, {meetup.city}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">Contact: {meetup.contact}</p>
+                </div>
+                <button className="bg-yellow-300 hover:bg-yellow-400 text-gray-900 px-4 py-2 rounded-md">
+                  Join
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="h-[600px] rounded-lg overflow-hidden">
+            <MapContainer
+              center={[12.8797, 121.7740]} // Center of Philippines
+              zoom={6}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {filteredMeetups.map(meetup => (
+                <Marker 
+                  key={meetup.id}
+                  position={[meetup.lat, meetup.lng]}
+                >
+                  <Popup>
+                    <div className="p-2">
+                      <h3 className="font-semibold">{meetup.name}</h3>
+                      <p className="text-sm text-gray-600">Host: {meetup.host}</p>
+                      <p className="text-sm text-gray-600">{meetup.date} at {meetup.time}</p>
+                      <p className="text-sm text-gray-600">{meetup.venue}</p>
+                      <button className="mt-2 w-full bg-yellow-300 hover:bg-yellow-400 text-gray-900 px-3 py-1 rounded-md text-sm">
+                        Join
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface SocialGroupProps {
   name: string;
@@ -145,27 +315,23 @@ export default function Meet() {
             Meet the Community
           </h1>
           <p className="text-xl text-gray-800 max-w-2xl mx-auto">
-            Connect with fellow cubers, join events, and find cube shops.
+            Connect with fellow cubers, join meetups, and find cube shops.
           </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-16">
-          {/* Social Groups */}
+          {/* Current Meetups Section */}
           <section>
             <div className="flex items-center gap-3 mb-6">
-              <Users size={28} className="text-blue-600" />
-              <h2 className="text-2xl font-bold">Join Our Community</h2>
+              <Calendar size={28} className="text-yellow-500" />
+              <h2 className="text-2xl font-bold">Current Meetups</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {socialGroups.map((group, index) => (
-                <SocialGroup key={index} {...group} />
-              ))}
-            </div>
+            <MeetupsView />
           </section>
 
-          {/* Cubemeets */}
+          {/* Organize a Cubemeet Section */}
           <section>
             <div className="flex items-center gap-3 mb-6">
               <Users size={28} className="text-yellow-500" />
@@ -187,22 +353,20 @@ export default function Meet() {
             </div>
           </section>
 
-          {/* Events */}
+          {/* Community Groups Section */}
           <section>
             <div className="flex items-center gap-3 mb-6">
-              <Calendar size={28} className="text-yellow-500" />
-              <h2 className="text-2xl font-bold">Events</h2>
+              <Users size={28} className="text-blue-600" />
+              <h2 className="text-2xl font-bold">Join Our Community</h2>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <iframe 
-                src="https://www.worldcubeassociation.org/competitions?region=Philippines&embedded=true"
-                className="w-full h-[600px] border-0"
-                title="WCA Competitions in Philippines"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {socialGroups.map((group, index) => (
+                <SocialGroup key={index} {...group} />
+              ))}
             </div>
           </section>
 
-          {/* Cube Shops */}
+          {/* Cube Shops Section */}
           <section>
             <div className="flex items-center gap-3 mb-6">
               <Store size={28} className="text-yellow-500" />
