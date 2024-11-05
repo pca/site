@@ -43,6 +43,53 @@ function Section({ title, children }: SectionProps) {
   );
 }
 
+interface CommitteeProps {
+  title: string;
+  head: { name: string; role: string };
+  members: string[];
+  imageLeft?: boolean;
+}
+
+function Committee({ title, head, members, imageLeft = true }: CommitteeProps) {
+  const imageBlock = (
+    <div className="bg-gray-200 aspect-square rounded-lg overflow-hidden shadow-md" />
+  );
+  
+  const contentBlock = (
+    <div className="flex flex-col justify-center">
+      <div className="text-center bg-white p-6 rounded-lg shadow-md">
+        <h3 className="font-semibold text-xl text-gray-900 mb-2">{head.name}</h3>
+        <p className="text-gray-600 mb-6">{head.role}</p>
+        <div className="w-16 h-0.5 bg-yellow-300 mx-auto mb-6" />
+        <h4 className="font-medium text-gray-900 mb-4">Committee Members</h4>
+        <ul className="space-y-2">
+          {members.map((member, index) => (
+            <li key={index} className="text-gray-600">{member}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+
+  return (
+    <Section title={title}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {imageLeft ? (
+          <>
+            {imageBlock}
+            {contentBlock}
+          </>
+        ) : (
+          <>
+            {contentBlock}
+            {imageBlock}
+          </>
+        )}
+      </div>
+    </Section>
+  );
+}
+
 export default function Organization() {
   const boardMembers = [
     { name: 'Nino Francis Reyes', role: 'Internals Head' },
@@ -79,41 +126,19 @@ export default function Organization() {
         </div>
       </Section>
 
-      <Section title="Communications Committee">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-gray-200 aspect-square rounded-lg" />
-          <div className="text-center">
-            <h3 className="font-medium text-gray-900 mb-4">{communicationsCommittee.head.name}</h3>
-            <p className="text-gray-600">{communicationsCommittee.head.role}</p>
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 mb-2">Members</h4>
-              <ul className="space-y-2">
-                {communicationsCommittee.members.map((member, index) => (
-                  <li key={index} className="text-gray-600">{member}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </Section>
+      <Committee
+        title="Communications Committee"
+        head={communicationsCommittee.head}
+        members={communicationsCommittee.members}
+        imageLeft={true}
+      />
 
-      <Section title="Moderating Committee">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="text-center">
-            <h3 className="font-medium text-gray-900 mb-4">{moderatingCommittee.head.name}</h3>
-            <p className="text-gray-600">{moderatingCommittee.head.role}</p>
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 mb-2">Members</h4>
-              <ul className="space-y-2">
-                {moderatingCommittee.members.map((member, index) => (
-                  <li key={index} className="text-gray-600">{member}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="bg-gray-200 aspect-square rounded-lg" />
-        </div>
-      </Section>
+      <Committee
+        title="Moderating Committee"
+        head={moderatingCommittee.head}
+        members={moderatingCommittee.members}
+        imageLeft={false}
+      />
 
       <Section title="You">
         <p className="text-center text-gray-600 max-w-3xl mx-auto">

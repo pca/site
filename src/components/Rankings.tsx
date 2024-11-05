@@ -88,12 +88,12 @@ export default function Rankings() {
         </div>
 
         {/* View Type Tabs and Region Selector */}
-        <div className="flex items-center gap-8 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 mb-8">
           {/* View Type Tabs */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full md:w-auto">
             <button
               onClick={() => setViewType('single')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+              className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
                 viewType === 'single' 
                   ? 'bg-yellow-300 text-gray-900' 
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -104,7 +104,7 @@ export default function Rankings() {
             </button>
             <button
               onClick={() => setViewType('average')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+              className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
                 viewType === 'average' 
                   ? 'bg-yellow-300 text-gray-900' 
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -116,7 +116,7 @@ export default function Rankings() {
           </div>
 
           {/* Region Selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
             <label className="text-sm font-medium text-gray-700">
               Region
             </label>
@@ -124,7 +124,7 @@ export default function Rankings() {
               value={selectedRegion}
               onChange={(value) => setSelectedRegion(value)}
               options={regionOptions}
-              className="w-[300px]"
+              className="w-full md:w-[300px]"
             />
           </div>
         </div>
