@@ -4,6 +4,8 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import Dropdown from '../ui/Dropdown';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -45,33 +47,97 @@ const sampleCompetitions: Competition[] = [
 ];
 
 const cubeEvents = [
-  "2x2x2", "3x3x3", "4x4x4", "5x5x5", "6x6x6", "7x7x7",
-  "3x3x3 Blindfolded", "3x3x3 One-Handed", "Clock", "Megaminx",
-  "Pyraminx", "Skewb", "Square-1", "4x4x4 Blindfolded",
-  "5x5x5 Blindfolded", "3x3x3 Multi-Blind"
+  { id: "222", name: "2x2x2", icon: "/images/222.svg" },
+  { id: "333", name: "3x3x3", icon: "/images/333.svg" },
+  { id: "444", name: "4x4x4", icon: "/images/444.svg" },
+  { id: "555", name: "5x5x5", icon: "/images/555.svg" },
+  { id: "666", name: "6x6x6", icon: "/images/666.svg" },
+  { id: "777", name: "7x7x7", icon: "/images/777.svg" },
+  { id: "333bf", name: "3x3x3 Blindfolded", icon: "/images/333bf.svg" },
+  { id: "333oh", name: "3x3x3 One-Handed", icon: "/images/333oh.svg" },
+  { id: "clock", name: "Clock", icon: "/images/clock.svg" },
+  { id: "minx", name: "Megaminx", icon: "/images/minx.svg" },
+  { id: "pyram", name: "Pyraminx", icon: "/images/pyram.svg" },
+  { id: "skewb", name: "Skewb", icon: "/images/skewb.svg" },
+  { id: "sq1", name: "Square-1", icon: "/images/sq1.svg" },
+  { id: "444bf", name: "4x4x4 Blindfolded", icon: "/images/444bf.svg" },
+  { id: "555bf", name: "5x5x5 Blindfolded", icon: "/images/555bf.svg" },
+  { id: "333mbf", name: "3x3x3 Multi-Blind", icon: "/images/333mbo.svg" }
 ];
+
+const SelectedEventDisplay = ({ event }: { event: string }) => {
+  const selectedEvent = cubeEvents.find(e => e.id === event);
+  return (
+    <div className="text-sm font-medium text-gray-700 mb-4">
+      Selected Event: {selectedEvent?.name || 'All Events'}
+    </div>
+  );
+};
+
+// Add API URL constant at the top with other imports
+const PCA_API_URL = 'https://api.pinoycubers.org';
+
+// Add interface for Region
+interface Region {
+  id: string;
+  name: string;
+}
 
 export default function Competitions() {
   const [view, setView] = useState<'list' | 'map'>('list');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState('All');
+  const [selectedEvent, setSelectedEvent] = useState('all');
+  const [selectedRegion, setSelectedRegion] = useState<[string, string]>(['national', '/']);
   const [filteredCompetitions, setFilteredCompetitions] = useState(sampleCompetitions);
 
-  const eventOptions = [
-    { value: 'All', label: 'All Events' },
-    ...cubeEvents.map(event => ({
-      value: event,
-      label: event
-    }))
+  // Add regions query
+  const { 
+    data: regions = [], 
+    isLoading: isRegionsLoading 
+  } = useQuery<Region[]>({
+    queryKey: ['regions'],
+    queryFn: async () => {
+      const response = await axios.get(`${PCA_API_URL}/regions`);
+      return response.data;
+    }
+  });
+
+  // Create regionOptions inside the component
+  const regionOptions = [
+    { value: 'PH', label: 'Philippines' },
+    ...(regions?.map((region: Region) => ({
+      value: region.id,
+      label: `${region.name}`
+    })) || [])
   ];
 
+  const handleRegionChange = (value: string) => {
+    let formattedRegion = "/";
+    let nationalOrRegional = "national";
+    
+    if (value === "PH") {
+      formattedRegion = "/";
+      nationalOrRegional = "national";
+    } else {
+      formattedRegion = `/${value}/`;
+      nationalOrRegional = "regional";
+    }
+    
+    setSelectedRegion([nationalOrRegional, formattedRegion]);
+  };
+
+  // Update useEffect to use new region format
   useEffect(() => {
-    const filtered = sampleCompetitions.filter(comp => 
-      comp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      comp.city.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = sampleCompetitions.filter(comp => {
+      const matchesSearch = comp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        comp.city.toLowerCase().includes(searchTerm.toLowerCase());
+      // Update region matching logic based on your requirements
+      const matchesRegion = selectedRegion[0] === 'national' ? true : 
+        comp.city.toLowerCase().includes(selectedRegion[1].replace(/\//g, '').toLowerCase());
+      return matchesSearch && matchesRegion;
+    });
     setFilteredCompetitions(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, selectedRegion]);
 
   return (
     <div className="space-y-8">
@@ -88,12 +154,17 @@ export default function Competitions() {
               className="custom-input custom-input-with-icon"
             />
           </div>
-          <Dropdown
-            value={selectedEvent}
-            onChange={setSelectedEvent}
-            options={eventOptions}
-            placeholder="Select Event"
-          />
+          {isRegionsLoading ? (
+            <div className="w-full h-10 bg-gray-100 animate-pulse rounded-md" />
+          ) : (
+            <Dropdown
+              value={selectedRegion[1].replace(/\//g, '') || 'PH'}
+              onChange={handleRegionChange}
+              options={regionOptions}
+              className="w-full"
+              placeholder="Select Region"
+            />
+          )}
           <div className="flex gap-2">
             <button
               onClick={() => setView('list')}
@@ -121,18 +192,39 @@ export default function Competitions() {
         </div>
 
         {/* Event Icons */}
-        <div className="grid grid-cols-8 gap-4 mb-8">
-          {cubeEvents.map((event, index) => (
+        <div className="mb-8">
+          <SelectedEventDisplay event={selectedEvent} />
+          <div className="flex flex-wrap gap-2">
             <button
-              key={index}
-              onClick={() => setSelectedEvent(event)}
-              className={`aspect-square rounded-lg shadow-sm hover:shadow-md transition-shadow p-2 flex items-center justify-center ${
-                selectedEvent === event ? 'bg-yellow-300' : 'bg-white'
+              onClick={() => setSelectedEvent('all')}
+              className={`p-2 rounded-md transition-colors ${
+                selectedEvent === 'all' 
+                  ? 'bg-yellow-300' 
+                  : 'bg-white hover:bg-gray-50'
               }`}
+              title="All Events"
             >
-              <span className="text-xs text-center text-gray-600">{event}</span>
+              <span className="px-2">All</span>
             </button>
-          ))}
+            {cubeEvents.map((event) => (
+              <button
+                key={event.id}
+                onClick={() => setSelectedEvent(event.id)}
+                className={`p-2 rounded-md transition-colors ${
+                  selectedEvent === event.id 
+                    ? 'bg-yellow-300' 
+                    : 'bg-white hover:bg-gray-50'
+                }`}
+                title={event.name}
+              >
+                <img
+                  src={event.icon}
+                  alt={event.name}
+                  className="w-6 h-6"
+                />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* View Content */}
