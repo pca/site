@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import Dropdown from './ui/Dropdown';
-import { Tabs, TabsList, TabsTrigger } from './ui/Tabs';
+import { List, BarChart } from 'lucide-react';
 
 interface Ranking {
   position: number;
@@ -90,12 +90,30 @@ export default function Rankings() {
         {/* View Type Tabs and Region Selector */}
         <div className="flex items-center gap-8 mb-8">
           {/* View Type Tabs */}
-          <Tabs defaultValue={viewType} onValueChange={(value) => setViewType(value as 'single' | 'average')}>
-            <TabsList className="grid w-[200px] grid-cols-2">
-              <TabsTrigger value="single">Single</TabsTrigger>
-              <TabsTrigger value="average">Average</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewType('single')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+                viewType === 'single' 
+                  ? 'bg-yellow-300 text-gray-900' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <List size={20} />
+              Single
+            </button>
+            <button
+              onClick={() => setViewType('average')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md ${
+                viewType === 'average' 
+                  ? 'bg-yellow-300 text-gray-900' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <BarChart size={20} />
+              Average
+            </button>
+          </div>
 
           {/* Region Selector */}
           <div className="flex items-center gap-2">
