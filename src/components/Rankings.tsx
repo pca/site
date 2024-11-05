@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Dropdown from './ui/Dropdown';
 import { List, BarChart } from 'lucide-react';
@@ -40,19 +41,10 @@ interface Ranking {
 }
 
 // Add the region options
-const regionOptions = [
-  { value: 'Philippines', label: 'Philippines' },
-  { value: 'NCR', label: 'NCR (Luzon - Metro Manila)' },
-  { value: 'CAR', label: 'CAR (Luzon - Cordillera Region)' },
-  { value: 'Region-I', label: 'Region I (Luzon - Ilocos Region)' },
-  { value: 'Region-II', label: 'Region II (Luzon - Cagayan Valley)' },
-  { value: 'Region-III', label: 'Region III (Luzon - Central Luzon)' },
-  { value: 'Region-IV-A', label: 'Region IV-A (Luzon - Calabarzon)' },
-  { value: 'Region-IV-B', label: 'Region IV-B (Luzon - Mimaropa)' },
-  { value: 'Region-V', label: 'Region V (Luzon - Bicol Region)' },
-  { value: 'Region-VI', label: 'Region VI (Visayas - Western Visayas)' },
-  { value: 'Region-VII', label: 'Region VII (Visayas - Central Visayas)' }
-];
+const fetchRegions = async () => {
+  const response = await axios.get(`${PCA_API_URL}/regions`);
+  return response.data;
+};
 
 // Update cube events to match API format
 const cubeEvents = [
@@ -84,36 +76,71 @@ const SelectedEventDisplay = ({ event }: { event: string }) => {
   );
 };
 
+// Add interface for Region
+interface Region {
+  id: string;
+  name: string;
+}
+
+// Update fetchRankings type
+const fetchRankings = async ({ 
+  region, 
+  viewType, 
+  event 
+}: { 
+  region: [string, string], 
+  viewType: 'single' | 'average', 
+  event: string 
+}): Promise<Ranking[]> => {
+  const response = await axios.get(
+    `${PCA_API_URL}/rankings/${region[0]}-${viewType}${region[1]}${event}`
+  );
+  return response.data;
+};
+
 export default function Rankings() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(true);
-  const [selectedRegion, setSelectedRegion] = useState(['national', '/']);
+  const [selectedRegion, setSelectedRegion] = useState<[string, string]>(['national', '/']);
   const [selectedEvent, setSelectedEvent] = useState('333');
   const [viewType, setViewType] = useState<'single' | 'average'>('single');
-  const [isLoading, setIsLoading] = useState(true);
-  const [rankings, setRankings] = useState<Ranking[]>([]);
 
-  // Fetch rankings when filters change
-  useEffect(() => {
-    setIsLoading(true);
-    axios
-      .get(
-        `${PCA_API_URL}/rankings/${selectedRegion[0]}-${viewType}${selectedRegion[1]}${selectedEvent}`
-      )
-      .then(res => {
-        setRankings(res.data);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching rankings:', error);
-        setIsLoading(false);
-      });
-  }, [selectedEvent, viewType, selectedRegion]);
+  // Move the regions query inside the component
+  const { 
+    data: regions = [], 
+    isLoading: isRegionsLoading 
+  } = useQuery<Region[]>({
+    queryKey: ['regions'],
+    queryFn: fetchRegions
+  });
+
+  // Create regionOptions inside the component
+  const regionOptions = [
+    { value: 'PH', label: 'Philippines' },
+    ...(regions?.map((region: Region) => ({
+      value: region.id,
+      label: `${region.name}`
+    })) || [])
+  ];
+
+  // Replace useState and useEffect with useQuery
+  const { 
+    data: rankings = [], 
+    isLoading,
+    error
+  } = useQuery<Ranking[]>({
+    queryKey: ['rankings', selectedRegion, viewType, selectedEvent],
+    queryFn: () => fetchRankings({
+      region: selectedRegion as [string, string],
+      viewType,
+      event: selectedEvent
+    })
+  });
 
   const handleRegionChange = (value: string) => {
     let formattedRegion = "/";
     let nationalOrRegional = "national";
     
-    if (value === "Philippines") {
+    if (value === "PH") {
       formattedRegion = "/";
       nationalOrRegional = "national";
     } else {
@@ -208,58 +235,83 @@ export default function Rankings() {
             <label className="text-sm font-medium text-gray-700">
               Region
             </label>
-            <Dropdown
-              value={selectedRegion[1].replace('/', '') || 'Philippines'}
-              onChange={handleRegionChange}
-              options={regionOptions}
-              className="w-full md:w-[300px]"
-            />
+            {isRegionsLoading ? (
+              <div className="w-full md:w-[350px] h-10 bg-gray-100 animate-pulse rounded-md" />
+            ) : (
+              <Dropdown
+                value={selectedRegion[1].replace(/\//g, '') || 'PH'}
+                onChange={handleRegionChange}
+                options={regionOptions}
+                className="w-full md:w-[350px]"
+                placeholder="Select a region"
+              />
+            )}
           </div>
         </div>
 
         {/* Rankings Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="w-full bg-white rounded-lg shadow overflow-hidden">
           {isLoading ? (
             <div className="p-8 text-center text-gray-500">Loading rankings...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">
+              Error loading rankings. Please try again later.
+            </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Result
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Competition
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {rankings.map((ranking, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {ranking.person_name}
+            <div className="w-full overflow-x-auto">
+              <table className="min-w-full table-auto">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="sticky left-0 z-20 w-20 bg-gray-50">
+                      <div className="pl-4 pr-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-full ml-[-1px]">
+                        #
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {ranking.value}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {ranking.competition.name}
-                    </td>
+                    </th>
+                    <th className="w-[350px] min-w-[350px] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Result
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Competition
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      WCA ID
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {rankings.map((ranking: Ranking, index: number) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                      <td className="sticky left-0 z-20 w-20">
+                        <div 
+                          className={`${
+                            index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                          } pl-4 pr-2 py-4 text-sm text-gray-500 w-full h-full absolute top-0 left-0 ml-[-1px]`}
+                        >
+                          {index + 1}
+                        </div>
+                      </td>
+                      <td className="w-[350px] min-w-[350px] px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {ranking.person_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                        {ranking.value}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {ranking.competition.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {ranking.wca_id}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
