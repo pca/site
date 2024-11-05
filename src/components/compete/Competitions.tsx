@@ -3,6 +3,7 @@ import { MapPin, Calendar, Search, List, Map as MapIcon } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Dropdown from '../ui/Dropdown';
 
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -56,6 +57,14 @@ export default function Competitions() {
   const [selectedEvent, setSelectedEvent] = useState('All');
   const [filteredCompetitions, setFilteredCompetitions] = useState(sampleCompetitions);
 
+  const eventOptions = [
+    { value: 'All', label: 'All Events' },
+    ...cubeEvents.map(event => ({
+      value: event,
+      label: event
+    }))
+  ];
+
   useEffect(() => {
     const filtered = sampleCompetitions.filter(comp => 
       comp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,19 +85,15 @@ export default function Competitions() {
               placeholder="Search competitions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+              className="custom-input custom-input-with-icon"
             />
           </div>
-          <select
+          <Dropdown
             value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
-          >
-            <option value="All">All Events</option>
-            {cubeEvents.map(event => (
-              <option key={event} value={event}>{event}</option>
-            ))}
-          </select>
+            onChange={setSelectedEvent}
+            options={eventOptions}
+            placeholder="Select Event"
+          />
           <div className="flex gap-2">
             <button
               onClick={() => setView('list')}

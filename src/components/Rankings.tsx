@@ -1,5 +1,7 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
+import Dropdown from './ui/Dropdown';
+import { Tabs, TabsList, TabsTrigger } from './ui/Tabs';
 
 interface Ranking {
   position: number;
@@ -29,6 +31,20 @@ export default function Rankings() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(true);
   const [selectedRegion, setSelectedRegion] = useState('Philippines');
   const [viewType, setViewType] = useState<'single' | 'average'>('single');
+
+  const regionOptions = [
+    { value: 'Philippines', label: 'Philippines' },
+    { value: 'NCR', label: 'NCR (Luzon - Metro Manila)' },
+    { value: 'CAR', label: 'CAR (Luzon - Cordillera Region)' },
+    { value: 'Region-I', label: 'Region I (Luzon - Ilocos Region)' },
+    { value: 'Region-II', label: 'Region II (Luzon - Cagayan Valley)' },
+    { value: 'Region-III', label: 'Region III (Luzon - Central Luzon)' },
+    { value: 'Region-IV-A', label: 'Region IV-A (Luzon - Calabarzon)' },
+    { value: 'Region-IV-B', label: 'Region IV-B (Luzon - Mimaropa)' },
+    { value: 'Region-V', label: 'Region V (Luzon - Bicol Region)' },
+    { value: 'Region-VI', label: 'Region VI (Visayas - Western Visayas)' },
+    { value: 'Region-VII', label: 'Region VII (Visayas - Central Visayas)' },
+  ];
 
   return (
     <section className="py-20 bg-gray-50">
@@ -71,45 +87,27 @@ export default function Rankings() {
           ))}
         </div>
 
-        {/* Region Selector */}
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Region
-          </label>
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="block w-full max-w-xs rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
-          >
-            <option value="Philippines">Philippines</option>
-            <option value="Asia">Asia</option>
-            <option value="World">World</option>
-          </select>
-        </div>
+        {/* View Type Tabs and Region Selector */}
+        <div className="flex items-center gap-8 mb-8">
+          {/* View Type Tabs */}
+          <Tabs defaultValue={viewType} onValueChange={(value) => setViewType(value as 'single' | 'average')}>
+            <TabsList className="grid w-[200px] grid-cols-2">
+              <TabsTrigger value="single">Single</TabsTrigger>
+              <TabsTrigger value="average">Average</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        {/* View Type Tabs */}
-        <div className="mb-6">
-          <div className="inline-flex rounded-md shadow-sm">
-            <button
-              onClick={() => setViewType('single')}
-              className={`px-4 py-2 text-sm font-medium rounded-l-md ${
-                viewType === 'single'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Single
-            </button>
-            <button
-              onClick={() => setViewType('average')}
-              className={`px-4 py-2 text-sm font-medium rounded-r-md ${
-                viewType === 'average'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Average
-            </button>
+          {/* Region Selector */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Region
+            </label>
+            <Dropdown
+              value={selectedRegion}
+              onChange={(value) => setSelectedRegion(value)}
+              options={regionOptions}
+              className="w-[300px]"
+            />
           </div>
         </div>
 

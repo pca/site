@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Dropdown from '../components/ui/Dropdown';
 
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -58,6 +59,15 @@ function MeetupsView() {
   const [view, setView] = useState<'list' | 'map'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredMeetups, setFilteredMeetups] = useState(sampleMeetups);
+  const [selectedCity, setSelectedCity] = useState('All');
+
+  const cityOptions = [
+    { value: 'All', label: 'All Cities' },
+    { value: 'Manila', label: 'Manila' },
+    { value: 'Cebu', label: 'Cebu' },
+    { value: 'Davao', label: 'Davao' },
+    // ... add other major cities
+  ];
 
   useEffect(() => {
     const filtered = sampleMeetups.filter(meetup => 
@@ -72,7 +82,7 @@ function MeetupsView() {
     <div className="space-y-8">
       <div className="bg-white rounded-lg shadow-md p-6">
         {/* Search and View Toggle */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -80,9 +90,15 @@ function MeetupsView() {
               placeholder="Search meetups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+              className="custom-input custom-input-with-icon"
             />
           </div>
+          <Dropdown
+            value={selectedCity}
+            onChange={setSelectedCity}
+            options={cityOptions}
+            placeholder="Select City"
+          />
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setView('list')}
@@ -209,7 +225,7 @@ function CubemeetForm({ onSubmit }: CubemeetFormProps) {
         <input
           type="text"
           id="name"
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+          className="custom-input"
           required
         />
         <p className="mt-1 text-sm text-gray-500">WCA ID (optional)</p>
@@ -222,7 +238,7 @@ function CubemeetForm({ onSubmit }: CubemeetFormProps) {
         <input
           type="text"
           id="venue"
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+          className="custom-input"
           required
         />
         <p className="mt-1 text-sm text-gray-500">Please be as specific as possible. Include a Google Maps link if possible.</p>
@@ -235,7 +251,7 @@ function CubemeetForm({ onSubmit }: CubemeetFormProps) {
         <input
           type="datetime-local"
           id="time"
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+          className="custom-input"
           required
         />
       </div>
@@ -247,7 +263,7 @@ function CubemeetForm({ onSubmit }: CubemeetFormProps) {
         <textarea
           id="contact"
           rows={3}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200"
+          className="w-full rounded-md border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 placeholder:text-gray-500"
           placeholder="Facebook name and contact number"
           required
         />
