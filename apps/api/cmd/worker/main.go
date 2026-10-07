@@ -8,11 +8,16 @@
 //	worker seed-state --archive FILE | --manifest FILE
 //	                                      record which export an existing database came from
 //	worker init-db --from FILE [--archive FILE | --manifest FILE]
-//	                                      create DB_PATH from a seed database if it does
-//	                                      not exist yet, then build statistics
+//	                                      create DB_PATH from a seed database (.sqlite3 or
+//	                                      .sqlite3.gz, e.g. an admin backup) if it does not
+//	                                      exist yet, then build statistics
+//	worker dev-seed --from FILE --out FILE.gz
+//	                                      write a small gzipped copy of a seed database for
+//	                                      local development
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"errors"
 	"flag"
@@ -23,6 +28,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/pca/backend/internal/config"
@@ -53,8 +59,24 @@ func run(log *slog.Logger) error {
 	archive := flags.String("archive", "", "path to a WCA export zip")
 	manifest := flags.String("manifest", "", "path to a database rebuild manifest")
 	from := flags.String("from", "", "seed database copied to DB_PATH by init-db")
+	out := flags.String("out", "", "output file for dev-seed")
 	if err := flags.Parse(args); err != nil {
 		return err
+	}
+
+	if cmd == "dev-seed" {
+		if *from == "" || *out == "" {
+			return fmt.Errorf("dev-seed needs --from and --out")
+		}
+		if err := devSeed(ctx, *from, *out); err != nil {
+			return err
+		}
+		info, err := os.Stat(*out)
+		if err != nil {
+			return err
+		}
+		log.Info("wrote development seed", "out", *out, "bytes", info.Size())
+		return nil
 	}
 
 	if cmd == "init-db" {
@@ -119,11 +141,12 @@ func run(log *slog.Logger) error {
 		fmt.Printf("Recorded WCA export %s (%s), archive %s.\n", state.ExportDate, state.ExportFormatVersion, state.ArchiveSHA256)
 		return nil
 	}
-	return fmt.Errorf("unknown command %q (commands: run, sync, import, statistics, assign-regions, seed-state, init-db)", cmd)
+	return fmt.Errorf("unknown command %q (commands: run, sync, import, statistics, assign-regions, seed-state, init-db, dev-seed)", cmd)
 }
 
 // copyIfMissing copies src to dst unless dst exists, writing to a temporary
-// file first so a partial copy is never mistaken for a database.
+// file first so a partial copy is never mistaken for a database. A src ending
+// in .gz is decompressed.
 func copyIfMissing(src, dst string) (bool, error) {
 	if _, err := os.Stat(dst); err == nil {
 		return false, nil
@@ -138,12 +161,21 @@ func copyIfMissing(src, dst string) (bool, error) {
 		return false, err
 	}
 	defer in.Close()
+	var r io.Reader = in
+	if strings.HasSuffix(src, ".gz") {
+		zr, err := gzip.NewReader(in)
+		if err != nil {
+			return false, fmt.Errorf("read %s: %w", src, err)
+		}
+		defer zr.Close()
+		r = zr
+	}
 	tmp := dst + ".seeding"
 	out, err := os.Create(tmp)
 	if err != nil {
 		return false, err
 	}
-	if _, err := io.Copy(out, in); err != nil {
+	if _, err := io.Copy(out, r); err != nil {
 		out.Close()
 		os.Remove(tmp)
 		return false, err
