@@ -133,7 +133,7 @@ function goBaseEnv() {
     DATA_DIR: dataDir,
     ADDR: `:${apiPort}`,
     ADMIN_BOOTSTRAP_USERNAME: env.ADMIN_BOOTSTRAP_USERNAME || "admin",
-    ADMIN_BOOTSTRAP_PASSWORD: env.ADMIN_BOOTSTRAP_PASSWORD || "change-me-please",
+    ADMIN_BOOTSTRAP_PASSWORD: env.ADMIN_BOOTSTRAP_PASSWORD || "admin",
   }
 }
 

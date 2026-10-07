@@ -120,7 +120,7 @@ pnpm dev
 
 - Site: <http://localhost:3000> (Vite, hot reload)
 - Admin: <http://localhost:3001/admin/> (Vite, hot reload), signed in as
-  `admin` / `change-me-please`
+  `admin` / `admin`
 - API: <http://localhost:8000/api/docs>
 
 `pnpm dev` runs the API, the worker and both frontends in one terminal with
