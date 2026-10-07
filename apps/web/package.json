@@ -1,6 +1,7 @@
 {
   "name": "@pca/web",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "pcaSite": { "mount": "/", "dist": "dist/client", "spa": false },
   "scripts": {

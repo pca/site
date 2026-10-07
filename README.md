@@ -71,7 +71,7 @@ PORT=18000                             # host port, bound to 127.0.0.1
 WCA_CLIENT_ID=...
 WCA_CLIENT_SECRET=...
 ADMIN_BOOTSTRAP_USERNAME=admin
-ADMIN_BOOTSTRAP_PASSWORD='...'         # single quotes keep $ and # literal
+ADMIN_BOOTSTRAP_PASSWORD='...'         # quote values with #; write $ as $$
 ADMIN_SECURE_COOKIES=1
 BACKUP_KEEP=5
 ```
@@ -86,9 +86,10 @@ VITE_WCA_CLIENT_ID=...
 VITE_GA_MEASUREMENT_ID=...
 ```
 
-Register `<PUBLIC_URL>/regional-rankings` as the WCA OAuth redirect URI (scope
-`public`). Prerendered HTML refreshes only on a Netlify rebuild. Maintenance
-mode, switched on in the admin, is served by an edge function that returns 503.
+Register each `/regional-rankings` URL in `WCA_ALLOWED_CALLBACK_URLS` as a
+redirect URI of the WCA OAuth application (scope `public`). Prerendered HTML
+refreshes only on a Netlify rebuild. Maintenance mode, switched on in the
+admin, is served by an edge function that returns 503.
 
 To run the whole stack in Docker instead: `cp .env.example .env`, then
 `docker compose up -d --build`, and open <http://localhost:8000>.
@@ -114,3 +115,15 @@ and mount it in `apps/api/cmd/api/main.go`:
 
 **Separate service:** add it to `docker-compose.yml` and route to it with
 `UPSTREAMS=/api/shop=http://shop:9000`.
+
+## License
+
+Copyright (C) 2026 Philippine Cubers Association.
+
+Licensed under the [GNU Affero General Public License v3.0](LICENSE). If you run
+a modified version as a public service, you must publish its source code under
+the same license.
+
+Competition results in `seed/` and those synced by the worker come from the
+[World Cube Association](https://www.worldcubeassociation.org/export/results)
+and are subject to its terms, not this license.
