@@ -62,13 +62,18 @@ scp seed/full/pca.sqlite3.gz seed/full/manifest.json server:/srv/pca-seed/
 8000, HTTPS. Redeploy after changing domains.
 
 ```sh
-PUBLIC_URL=https://pinoycubers.org     # WCA callback and CORS origin
+PUBLIC_URL=https://beta.pinoycubers.org
+CORS_ALLOWED_ORIGINS=https://beta.pinoycubers.org,https://pinoycubers.org
+WCA_ALLOWED_CALLBACK_URLS=https://beta.pinoycubers.org/regional-rankings,https://pinoycubers.org/regional-rankings
 SITES=admin
 SEED_DIR=/srv/pca-seed
+PORT=18000                             # host port, bound to 127.0.0.1
 WCA_CLIENT_ID=...
 WCA_CLIENT_SECRET=...
-ADMIN_BOOTSTRAP_PASSWORD=...
+ADMIN_BOOTSTRAP_USERNAME=admin
+ADMIN_BOOTSTRAP_PASSWORD='...'         # single quotes keep $ and # literal
 ADMIN_SECURE_COOKIES=1
+BACKUP_KEEP=5
 ```
 
 **Netlify:** `netlify.toml` sets the build. Environment:
