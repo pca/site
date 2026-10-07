@@ -8,7 +8,8 @@ x-app: &app
       required: false
   environment: &app-env
     WCA_DEFAULT_CALLBACK_URL: ${PUBLIC_URL:-http://localhost:8000}/regional-rankings
-    WCA_ALLOWED_CALLBACK_URLS: ${PUBLIC_URL:-http://localhost:8000}/regional-rankings
+    # Comma-separated; list every site origin that may start a WCA login.
+    WCA_ALLOWED_CALLBACK_URLS: ${WCA_ALLOWED_CALLBACK_URLS:-${PUBLIC_URL:-http://localhost:8000}/regional-rankings}
     # The public site may live on another origin (e.g. Netlify).
     CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${PUBLIC_URL:-}}
   volumes:
