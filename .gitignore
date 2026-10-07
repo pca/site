@@ -11,6 +11,7 @@ dist/
 *.exe
 apps/api/data/
 apps/api/bin/
+seed/full/
 
 # Local reference material and the seed database.
 archive/

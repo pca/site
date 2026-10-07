@@ -38,11 +38,11 @@ services:
     entrypoint: ["/usr/local/bin/worker"]
     command:
       - init-db
-      - --from=/seed/${SEED_DATABASE:-rebuilt-october-2026.sqlite3}
-      - --manifest=/seed/${SEED_MANIFEST:-rebuilt-october-2026-manifest.json}
+      - --from=/seed/${SEED_DATABASE:-pca.sqlite3.gz}
+      - --manifest=/seed/${SEED_MANIFEST:-manifest.json}
     volumes:
       - pca-data:/data
-      - ${SEED_DIR:-./archive/web-backend/data}:/seed:ro
+      - ${SEED_DIR:-./seed}:/seed:ro
     restart: "no"
 
   # Public site (/), admin (/admin) and API (/api) on one port.

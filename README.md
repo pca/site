@@ -12,7 +12,8 @@ frontends and backends plug in without changing the server or the Dockerfile
 | `apps/admin`      | Staff admin. TanStack Router SPA under `/admin`. |
 | `apps/api`        | Go API and worker, SQLite. See [`apps/api/README.md`](apps/api/README.md). |
 | `packages/shared` | Regions, events, API types and formatting shared by both frontends. |
-| `archive/`        | Local reference material and the seed database in `archive/web-backend/data`. Ignored by git and Docker builds. |
+| `seed/`           | Seed databases. `seed/pca.sqlite3.gz` is a small development copy in git; `seed/full/` holds the complete one and is ignored. |
+| `archive/`        | Local reference material. Ignored by git and Docker builds. |
 
 The frontends are plain files, with no Node server at runtime. The Go server
 routes requests like this:
@@ -42,11 +43,10 @@ docker compose up -d --build
 - Admin: <http://localhost:8000/admin>
 - API docs: <http://localhost:8000/api/docs>
 
-On the first start the one-shot `init-db` service copies
-`archive/web-backend/data/rebuilt-october-2026.sqlite3` into the `pca-data` volume.
-It then records the bundled WCA export and builds statistics. Later starts
-leave the database alone. The seed files are mounted read-only and are never
-modified.
+On the first start the one-shot `init-db` service unpacks `seed/pca.sqlite3.gz`
+into the `pca-data` volume. It then records the WCA export named in
+`seed/manifest.json` and builds statistics. Later starts leave the database
+alone. The seed files are mounted read-only and are never modified.
 
 `PUBLIC_URL`, `WCA_CLIENT_ID` and `GA_MEASUREMENT_ID` are baked into the
 public site when the image is built, so rebuild after changing them. Register
@@ -60,13 +60,11 @@ The public site is a static build, so it can live on Netlify while
 `https://pinoycubers.org` is the site and `https://api.pinoycubers.org` the
 compose app; substitute your domains.
 
-**Seed data.** The seed files are not in git. Copy the database and its
-manifest (about 82 MB; the WCA export zip is not needed) to the server once:
+**Seed data.** Production starts from the full seed, which is not in git.
+Copy it and its manifest (about 19 MB) to the server once:
 
 ```sh
-scp archive/web-backend/data/rebuilt-october-2026.sqlite3 \
-    archive/web-backend/data/rebuilt-october-2026-manifest.json \
-    server:/srv/pca-seed/
+scp seed/full/pca.sqlite3.gz seed/full/manifest.json server:/srv/pca-seed/
 ```
 
 `init-db` copies them into the `pca-data` volume on the first deploy only.
@@ -130,9 +128,21 @@ labelled output, and Ctrl+C stops them all. The frontends proxy `/api` to the
 API. Go changes rebuild and restart the API and worker; if the build fails,
 the previous version keeps running.
 
-On the first run it creates `apps/api/data/pca.sqlite3` from the seed in
-`archive/web-backend/data`, using the same `init-db` step as Docker, so the
-seed is never modified. This local database is separate from Docker's volume.
+On the first run it creates `apps/api/data/pca.sqlite3` from
+`seed/pca.sqlite3.gz`, using the same `init-db` step as Docker, so the seed is
+never modified. This local database is separate from Docker's volume.
+
+The development seed holds every competition, result and ranking from the
+full seed. It leaves out scrambles, unused tables and indexes, which the API
+recreates when it opens the database. Accounts have WCA IDs and regions but
+no names, emails or usable passwords. To work against the full seed, set
+`SEED_DIR=seed/full` and run `pnpm db:reset`. To rebuild the development seed
+from a full database:
+
+```sh
+cd apps/api
+go run ./cmd/worker dev-seed --from=FULL.sqlite3 --out=../../seed/pca.sqlite3.gz
+```
 
 | Command | What it does |
 |---------|--------------|

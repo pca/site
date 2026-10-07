@@ -24,9 +24,9 @@ const env = loadEnv()
 const apiPort = env.PORT || "8000"
 const dataDir = resolve(root, env.DATA_DIR || join(apiDir, "data"))
 const dbPath = resolve(root, env.DB_PATH || join(dataDir, "pca.sqlite3"))
-const seedDir = resolve(root, env.SEED_DIR || "archive/web-backend/data")
-const seedDb = join(seedDir, env.SEED_DATABASE || "rebuilt-october-2026.sqlite3")
-const seedManifest = join(seedDir, env.SEED_MANIFEST || "rebuilt-october-2026-manifest.json")
+const seedDir = resolve(root, env.SEED_DIR || "seed")
+const seedDb = join(seedDir, env.SEED_DATABASE || "pca.sqlite3.gz")
+const seedManifest = join(seedDir, env.SEED_MANIFEST || "manifest.json")
 
 // Every app with a pcaSite field and a dev script runs as a service named
 // after its directory. Its URL comes from `--port N` in that script.
