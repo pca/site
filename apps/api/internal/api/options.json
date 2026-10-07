@@ -1,0 +1,70 @@
+{
+ "/auth/login/wca": {
+  "anonymous": "{\"name\":\"Wca Login\",\"description\":\"Login with WCA oauth authorization code\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"],\"actions\":{\"POST\":{\"code\":{\"type\":\"string\",\"required\":true,\"read_only\":false,\"label\":\"Code\"},\"callback_url\":{\"type\":\"string\",\"required\":false,\"read_only\":false,\"label\":\"Callback url\"}}}}"
+ },
+ "/auth/logout": {
+  "anonymous": "{\"name\":\"Logout\",\"description\":\"Signs the current user out and deletes their API token.\\n\\nAccepts/Returns nothing.\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/events": {
+  "anonymous": "{\"name\":\"Event List Api\",\"description\":\"List of official WCA events\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/news": {
+  "anonymous": "{\"name\":\"News List Api\",\"description\":\"News Feed from Facebook Page\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/persons/{wca_id}": {
+  "anonymous": "{\"name\":\"Person Retrieve Api\",\"description\":\"Retrieve WCA profile and statistics\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/rankings/national-average/{event_id}": {
+  "anonymous": "{\"name\":\"National Ranking Average Api\",\"description\":\"Official average national rankings\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/rankings/national-single/{event_id}": {
+  "anonymous": "{\"name\":\"National Ranking Single Api\",\"description\":\"Official single national rankings\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/rankings/regional-average/{region_id}/{event_id}": {
+  "anonymous": "{\"name\":\"Regional Ranking Average Api\",\"description\":\"Unofficial average regional rankings\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/rankings/regional-single/{region_id}/{event_id}": {
+  "anonymous": "{\"name\":\"Regional Ranking Single Api\",\"description\":\"Unofficial single regional rankings\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/rankings/zonal-average/{zone_id}/{event_id}": {
+  "anonymous": "{\"name\":\"Zonal Ranking Average Api\",\"description\":\"Unofficial average zonal rankings\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/rankings/zonal-single/{zone_id}/{event_id}": {
+  "anonymous": "{\"name\":\"Zonal Ranking Single Api\",\"description\":\"Unofficial single zonal rankings\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/regions": {
+  "anonymous": "{\"name\":\"Region List Api\",\"description\":\"List regions in the Philippines\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/growth/active-competitors": {
+  "anonymous": "{\"name\":\"Active Competitors Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/growth/attendances": {
+  "anonymous": "{\"name\":\"Attendances Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/growth/new-attendees": {
+  "anonymous": "{\"name\":\"New Attendees Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/growth/popular-events": {
+  "anonymous": "{\"name\":\"Popular Events Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/regional/strength/events/{event_id}": {
+  "anonymous": "{\"name\":\"Regional Strength By Event Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/regional/strength/regions": {
+  "anonymous": "{\"name\":\"Regional Strength Regions Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/statistics/regional/strength/regions/{region_id}": {
+  "anonymous": "{\"name\":\"Regional Strength By Region Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ },
+ "/user": {
+  "authenticated": "{\"name\":\"User Retrieve Api\",\"description\":\"Retrieve authenticated user\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}",
+  "requires_auth": true
+ },
+ "/user/region-update-requests": {
+  "authenticated": "{\"name\":\"Region Update Request List Create Api\",\"description\":\"\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"],\"actions\":{\"POST\":{\"region\":{\"type\":\"choice\",\"required\":true,\"read_only\":false,\"label\":\"Region\",\"choices\":[{\"value\":\"NCR\",\"display_name\":\"NCR (Luzon - Metro Manila)\"},{\"value\":\"CAR\",\"display_name\":\"CAR (Luzon - Cordillera Region)\"},{\"value\":\"01\",\"display_name\":\"Region I (Luzon - Ilocos Region)\"},{\"value\":\"02\",\"display_name\":\"Region II (Luzon - Cagayan Valley)\"},{\"value\":\"03\",\"display_name\":\"Region III (Luzon - Central Luzon)\"},{\"value\":\"4A\",\"display_name\":\"Region IV-A (Luzon - Calabarzon)\"},{\"value\":\"4B\",\"display_name\":\"Region IV-B (Luzon - Mimaropa)\"},{\"value\":\"05\",\"display_name\":\"Region V (Luzon - Bicol Region)\"},{\"value\":\"06\",\"display_name\":\"Region VI (Visayas - Western Visayas)\"},{\"value\":\"07\",\"display_name\":\"Region VII (Visayas - Central Visayas)\"},{\"value\":\"08\",\"display_name\":\"Region VIII (Visayas - Eastern Visayas)\"},{\"value\":\"09\",\"display_name\":\"Region IX (Mindanao - Zamboanga Peninsula)\"},{\"value\":\"10\",\"display_name\":\"Region X (Mindanao - Northern Mindanao)\"},{\"value\":\"11\",\"display_name\":\"Region XI (Mindanao - Davao Region)\"},{\"value\":\"12\",\"display_name\":\"Region XII (Mindanao - Soccsksargen)\"},{\"value\":\"13\",\"display_name\":\"Region XIII (Mindanao - Caraga)\"},{\"value\":\"BARMM\",\"display_name\":\"BARMM (Mindanao - Bangsamoro)\"},{\"value\":\"18\",\"display_name\":\"Region XVIII (Visayas - Negros Island Region)\"}]},\"status\":{\"type\":\"field\",\"required\":false,\"read_only\":true,\"label\":\"Status\"},\"created_at\":{\"type\":\"datetime\",\"required\":false,\"read_only\":true,\"label\":\"Created at\"}}}}",
+  "requires_auth": true
+ },
+ "/zones": {
+  "anonymous": "{\"name\":\"Zone List Api\",\"description\":\"List region zones in the Philippines\",\"renders\":[\"application/json\",\"text/html\"],\"parses\":[\"application/json\",\"application/x-www-form-urlencoded\",\"multipart/form-data\"]}"
+ }
+}

@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.output
+**/.tanstack
+**/.vinxi
+.git
+.env
+*.sqlite3*
+*.zip
+*.exe
+apps/api/data
+apps/api/bin
+archive
+backend

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.output/
+.tanstack/
+*.tsbuildinfo
+.env
+*.sqlite3
+*.sqlite3-*
+*.zip
+*.part
+*.exe
+apps/api/data/
+apps/api/bin/
+
+# Local reference material and the seed database.
+archive/

@@ -1,0 +1,85 @@
+name: pca
+
+x-app: &app
+  image: pca
+  pull_policy: never
+  env_file:
+    - path: .env
+      required: false
+  environment: &app-env
+    WCA_DEFAULT_CALLBACK_URL: ${PUBLIC_URL:-http://localhost:8000}/regional-rankings
+    WCA_ALLOWED_CALLBACK_URLS: ${PUBLIC_URL:-http://localhost:8000}/regional-rankings
+    # The public site may live on another origin (e.g. Netlify).
+    CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${PUBLIC_URL:-}}
+  volumes:
+    - pca-data:/data
+  # Docker's default json-file logs are never rotated.
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  # Builds the image and creates /data/pca.sqlite3 from the seed database on
+  # first start only. The seed directory is mounted read-only and needs only
+  # the database and its manifest, which identifies the WCA export it holds.
+  init-db:
+    <<: *app
+    build:
+      context: .
+      args:
+        VITE_SITE_URL: ${PUBLIC_URL:-}
+        VITE_WCA_CLIENT_ID: ${WCA_CLIENT_ID:-}
+        VITE_GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+        SITES: ${SITES:-}
+    pull_policy: build
+    entrypoint: ["/usr/local/bin/worker"]
+    command:
+      - init-db
+      - --from=/seed/${SEED_DATABASE:-rebuilt-october-2026.sqlite3}
+      - --manifest=/seed/${SEED_MANIFEST:-rebuilt-october-2026-manifest.json}
+    volumes:
+      - pca-data:/data
+      - ${SEED_DIR:-./archive/web-backend/data}:/seed:ro
+    restart: "no"
+
+  # Public site (/), admin (/admin) and API (/api) on one port.
+  app:
+    <<: *app
+    command: ["serve"]
+    environment:
+      <<: *app-env
+      # Extra backend services, served on this same port, e.g.
+      # "/api/shop=http://shop:9000"
+      UPSTREAMS: ${UPSTREAMS:-}
+    ports:
+      - "${PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/api", "healthcheck"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    <<: *app
+    entrypoint: ["/usr/local/bin/worker"]
+    command: ["run"]
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # A backend in another language (or another Go module) runs as its own
+  # service and is reached through the app's UPSTREAMS, so it stays on the
+  # same origin and port. Uncomment and set UPSTREAMS=/api/shop=http://shop:9000
+  # shop:
+  #   build: ./apps/shop-api
+  #   restart: unless-stopped
+
+volumes:
+  pca-data:

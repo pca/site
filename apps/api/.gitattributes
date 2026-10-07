@@ -1,0 +1,4 @@
+* text=auto eol=lf
+internal/geo/boundaries/* -text
+*.sqlite3 binary
+*.zip binary

@@ -1,0 +1,2108 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "PCA API",
+        "version": "1.0"
+    },
+    "paths": {
+        "/auth/login/wca/": {
+            "post": {
+                "operationId": "auth_login_wca_create",
+                "description": "Login with WCA oauth authorization code",
+                "summary": "Login with WCA oauth authorization code",
+                "tags": [
+                    "auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WCALogin"
+                            },
+                            "examples": {
+                                "WCALoginRequestExample": {
+                                    "value": {
+                                        "code": "OTQ5HFpRcpwBJPxGZgwc0Dc5LpnTUXxVVNHxe2QDdEl",
+                                        "callback_url": "http://localhost:8080/wca-callback"
+                                    },
+                                    "summary": "WCA login request example"
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WCALogin"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WCALogin"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WCALogin"
+                                },
+                                "examples": {
+                                    "WCALoginResponseExample": {
+                                        "value": {
+                                            "key": "cjcsu60bc8fi4hw9s4lbhgnbtc4ls1xlyga99qe0"
+                                        },
+                                        "summary": "WCA login response example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/auth/logout/": {
+            "post": {
+                "operationId": "auth_logout_create",
+                "description": "Signs the current user out and deletes their API token.\n\nAccepts/Returns nothing.",
+                "summary": "Signs the current user out and deletes their API token.",
+                "tags": [
+                    "auth"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RestAuthDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/events/": {
+            "get": {
+                "operationId": "events_list",
+                "description": "List of official WCA events",
+                "summary": "List of official WCA events",
+                "tags": [
+                    "events"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Event"
+                                    }
+                                },
+                                "examples": {
+                                    "EventListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "id": "333",
+                                                    "name": "3x3x3 Cube",
+                                                    "rank": "10",
+                                                    "format": "time",
+                                                    "cell_name": "3x3x3 Cube"
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Event list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/news/": {
+            "get": {
+                "operationId": "news_list",
+                "description": "News Feed from Facebook Page",
+                "summary": "News Feed from Facebook Page",
+                "tags": [
+                    "news"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/News"
+                                    }
+                                },
+                                "examples": {
+                                    "NewsListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "from_name": "Philippine Cubers Association",
+                                                    "message": "Hello World!",
+                                                    "image": null,
+                                                    "permalink": "https://www.facebook.com/182835918433029/posts/3709202639129655/",
+                                                    "created_at": "2021-04-24T02:29:17.921Z"
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "News list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/persons/{wca_id}/": {
+            "get": {
+                "operationId": "persons_retrieve",
+                "description": "Retrieve WCA profile and statistics",
+                "summary": "Retrieve WCA profile and statistics",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "wca_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "persons"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Person"
+                                },
+                                "examples": {
+                                    "PersonRetrieveExample": {
+                                        "value": {
+                                            "id": "2021DELA01",
+                                            "name": "Juan dela Cruz",
+                                            "country": "Philippines",
+                                            "gender": "Male",
+                                            "avatar": {
+                                                "url": "https://www.worldcubeassociation.org/assets/missing_avatar_thumb-f0ea801c804765a22892b57636af829edbef25260a65d90aaffbd7873bde74fc.png",
+                                                "thumb_url": "https://www.worldcubeassociation.org/assets/missing_avatar_thumb-f0ea801c804765a22892b57636af829edbef25260a65d90aaffbd7873bde74fc.png",
+                                                "is_default": true
+                                            },
+                                            "career": {
+                                                "competition_count": 12,
+                                                "solve_count": 60,
+                                                "personal_records": {
+                                                    "333": {
+                                                        "single": {
+                                                            "best": "12.32",
+                                                            "world_rank": 14912,
+                                                            "continent_rank": 4105,
+                                                            "country_rank": 341
+                                                        },
+                                                        "average": {
+                                                            "best": "14.02",
+                                                            "world_rank": 15318,
+                                                            "continent_rank": 5291,
+                                                            "country_rank": 421
+                                                        }
+                                                    }
+                                                },
+                                                "records": {
+                                                    "national": 3,
+                                                    "continental": 0,
+                                                    "world": 0,
+                                                    "total": 3
+                                                },
+                                                "medals": {
+                                                    "gold": 1,
+                                                    "silver": 2,
+                                                    "bronze": 0,
+                                                    "total": 3
+                                                }
+                                            }
+                                        },
+                                        "summary": "Person retrieve example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/rankings/national-average/{event_id}/": {
+            "get": {
+                "operationId": "rankings_national_average_list",
+                "description": "Official average national rankings",
+                "summary": "Official average national rankings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Limits the result count.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "rankings"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Result"
+                                    }
+                                },
+                                "examples": {
+                                    "ResultListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "competition": {
+                                                        "id": "MC2021",
+                                                        "name": "Manila Cubing 2021"
+                                                    },
+                                                    "event": {
+                                                        "id": "333",
+                                                        "name": "3x3x3 Cube",
+                                                        "rank": "10",
+                                                        "format": "time",
+                                                        "cell_name": "3x3x3 Cube"
+                                                    },
+                                                    "value": "6.51",
+                                                    "person_name": "Juan dela Cruz",
+                                                    "wca_id": "2021DELA01",
+                                                    "region": "NCR",
+                                                    "solves": {
+                                                        "solve1": "7.93",
+                                                        "solve2": "6.51",
+                                                        "solve3": "7.33",
+                                                        "solve4": "6.97",
+                                                        "solve5": "8.32"
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Result list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/rankings/national-single/{event_id}/": {
+            "get": {
+                "operationId": "rankings_national_single_list",
+                "description": "Official single national rankings",
+                "summary": "Official single national rankings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Limits the result count.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "rankings"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Result"
+                                    }
+                                },
+                                "examples": {
+                                    "ResultListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "competition": {
+                                                        "id": "MC2021",
+                                                        "name": "Manila Cubing 2021"
+                                                    },
+                                                    "event": {
+                                                        "id": "333",
+                                                        "name": "3x3x3 Cube",
+                                                        "rank": "10",
+                                                        "format": "time",
+                                                        "cell_name": "3x3x3 Cube"
+                                                    },
+                                                    "value": "6.51",
+                                                    "person_name": "Juan dela Cruz",
+                                                    "wca_id": "2021DELA01",
+                                                    "region": "NCR",
+                                                    "solves": {
+                                                        "solve1": "7.93",
+                                                        "solve2": "6.51",
+                                                        "solve3": "7.33",
+                                                        "solve4": "6.97",
+                                                        "solve5": "8.32"
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Result list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/rankings/regional-average/{region_id}/{event_id}/": {
+            "get": {
+                "operationId": "rankings_regional_average_list",
+                "description": "Unofficial average regional rankings",
+                "summary": "Unofficial average regional rankings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Limits the result count.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "region_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "rankings"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Result"
+                                    }
+                                },
+                                "examples": {
+                                    "ResultListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "competition": {
+                                                        "id": "MC2021",
+                                                        "name": "Manila Cubing 2021"
+                                                    },
+                                                    "event": {
+                                                        "id": "333",
+                                                        "name": "3x3x3 Cube",
+                                                        "rank": "10",
+                                                        "format": "time",
+                                                        "cell_name": "3x3x3 Cube"
+                                                    },
+                                                    "value": "6.51",
+                                                    "person_name": "Juan dela Cruz",
+                                                    "wca_id": "2021DELA01",
+                                                    "region": "NCR",
+                                                    "solves": {
+                                                        "solve1": "7.93",
+                                                        "solve2": "6.51",
+                                                        "solve3": "7.33",
+                                                        "solve4": "6.97",
+                                                        "solve5": "8.32"
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Result list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/rankings/regional-single/{region_id}/{event_id}/": {
+            "get": {
+                "operationId": "rankings_regional_single_list",
+                "description": "Unofficial single regional rankings",
+                "summary": "Unofficial single regional rankings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Limits the result count.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "region_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "rankings"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Result"
+                                    }
+                                },
+                                "examples": {
+                                    "ResultListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "competition": {
+                                                        "id": "MC2021",
+                                                        "name": "Manila Cubing 2021"
+                                                    },
+                                                    "event": {
+                                                        "id": "333",
+                                                        "name": "3x3x3 Cube",
+                                                        "rank": "10",
+                                                        "format": "time",
+                                                        "cell_name": "3x3x3 Cube"
+                                                    },
+                                                    "value": "6.51",
+                                                    "person_name": "Juan dela Cruz",
+                                                    "wca_id": "2021DELA01",
+                                                    "region": "NCR",
+                                                    "solves": {
+                                                        "solve1": "7.93",
+                                                        "solve2": "6.51",
+                                                        "solve3": "7.33",
+                                                        "solve4": "6.97",
+                                                        "solve5": "8.32"
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Result list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/rankings/zonal-average/{zone_id}/{event_id}": {
+            "get": {
+                "operationId": "rankings_zonal_average_list",
+                "description": "Unofficial average zonal rankings",
+                "summary": "Unofficial average zonal rankings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Limits the result count.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "zone_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "rankings"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Result"
+                                    }
+                                },
+                                "examples": {
+                                    "ResultListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "competition": {
+                                                        "id": "MC2021",
+                                                        "name": "Manila Cubing 2021"
+                                                    },
+                                                    "event": {
+                                                        "id": "333",
+                                                        "name": "3x3x3 Cube",
+                                                        "rank": "10",
+                                                        "format": "time",
+                                                        "cell_name": "3x3x3 Cube"
+                                                    },
+                                                    "value": "6.51",
+                                                    "person_name": "Juan dela Cruz",
+                                                    "wca_id": "2021DELA01",
+                                                    "region": "NCR",
+                                                    "solves": {
+                                                        "solve1": "7.93",
+                                                        "solve2": "6.51",
+                                                        "solve3": "7.33",
+                                                        "solve4": "6.97",
+                                                        "solve5": "8.32"
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Result list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/rankings/zonal-single/{zone_id}/{event_id}": {
+            "get": {
+                "operationId": "rankings_zonal_single_list",
+                "description": "Unofficial single zonal rankings",
+                "summary": "Unofficial single zonal rankings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Limits the result count.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "zone_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "rankings"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Result"
+                                    }
+                                },
+                                "examples": {
+                                    "ResultListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "competition": {
+                                                        "id": "MC2021",
+                                                        "name": "Manila Cubing 2021"
+                                                    },
+                                                    "event": {
+                                                        "id": "333",
+                                                        "name": "3x3x3 Cube",
+                                                        "rank": "10",
+                                                        "format": "time",
+                                                        "cell_name": "3x3x3 Cube"
+                                                    },
+                                                    "value": "6.51",
+                                                    "person_name": "Juan dela Cruz",
+                                                    "wca_id": "2021DELA01",
+                                                    "region": "NCR",
+                                                    "solves": {
+                                                        "solve1": "7.93",
+                                                        "solve2": "6.51",
+                                                        "solve3": "7.33",
+                                                        "solve4": "6.97",
+                                                        "solve5": "8.32"
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Result list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/regions/": {
+            "get": {
+                "operationId": "regions_list",
+                "description": "List regions in the Philippines",
+                "summary": "List regions in the Philippines",
+                "tags": [
+                    "locations"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Region"
+                                    }
+                                },
+                                "examples": {
+                                    "RegionListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "id": "NCR",
+                                                    "name": "NCR (Luzon - Metro Manila)"
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Region list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/growth/active-competitors/": {
+            "get": {
+                "operationId": "statistics_growth_active_competitors_retrieve",
+                "description": "Prepared annual regional growth series.",
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GrowthMetricResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/growth/attendances/": {
+            "get": {
+                "operationId": "statistics_growth_attendances_retrieve",
+                "description": "Prepared annual regional growth series.",
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GrowthMetricResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/growth/new-attendees/": {
+            "get": {
+                "operationId": "statistics_growth_new_attendees_retrieve",
+                "description": "Prepared annual regional growth series.",
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GrowthMetricResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/growth/popular-events/": {
+            "get": {
+                "operationId": "statistics_growth_popular_events_retrieve",
+                "description": "Prepared event popularity for one host-region scope.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "region",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "PCA region ID or national (default)."
+                    }
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PopularEventsResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/regional/strength/events/{event_id}/": {
+            "get": {
+                "operationId": "statistics_regional_strength_events_retrieve",
+                "description": "Prepared five-person regional strength for one WCA event.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "event_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "average",
+                                "single"
+                            ]
+                        },
+                        "description": "WCA ranking result type."
+                    }
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RegionalStrengthEventResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/regional/strength/regions/": {
+            "get": {
+                "operationId": "statistics_regional_strength_regions_retrieve",
+                "description": "Prepared event strengths grouped across every PCA home region.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "average",
+                                "official",
+                                "single"
+                            ]
+                        },
+                        "description": "WCA ranking result type, or official to select the standard result type separately for each event."
+                    }
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RegionalStrengthRegionsResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/statistics/regional/strength/regions/{region_id}/": {
+            "get": {
+                "operationId": "statistics_regional_strength_regions_retrieve_2",
+                "description": "Prepared event strengths for one PCA home region.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "average",
+                                "single"
+                            ]
+                        },
+                        "description": "WCA ranking result type."
+                    },
+                    {
+                        "in": "path",
+                        "name": "region_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RegionalStrengthRegionResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/user/": {
+            "get": {
+                "operationId": "user_retrieve",
+                "description": "Retrieve authenticated user",
+                "summary": "Retrieve authenticated user",
+                "tags": [
+                    "user"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDetail"
+                                },
+                                "examples": {
+                                    "UserRetrieveExample": {
+                                        "value": {
+                                            "first_name": "Juan",
+                                            "last_name": "dela Cruz",
+                                            "wca_id": "2021DELA01",
+                                            "region": "NCR",
+                                            "region_updated_at": "2021-04-24T03:14:50.069Z",
+                                            "created_at": "2021-04-24T03:14:50.069Z"
+                                        },
+                                        "summary": "User retrieve example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/user/region-update-requests/": {
+            "get": {
+                "operationId": "user_region_update_requests_list",
+                "description": "List region-update-requests of the user",
+                "summary": "List region-update-requests of the user",
+                "tags": [
+                    "user"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/RegionUpdateRequest"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "user_region_update_requests_create",
+                "description": "Create a region-update-request.\n\nA region-update-request can only be created once per year.",
+                "summary": "Create a region-update-request.",
+                "tags": [
+                    "user"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegionUpdateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegionUpdateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegionUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RegionUpdateRequest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/zones/": {
+            "get": {
+                "operationId": "zones_list",
+                "description": "List region zones in the Philippines",
+                "summary": "List region zones in the Philippines",
+                "tags": [
+                    "locations"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Zone"
+                                    }
+                                },
+                                "examples": {
+                                    "ZoneListExample": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "id": "luzon",
+                                                    "name": "Luzon"
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Zone list example"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AnnualValue": {
+                "type": "object",
+                "properties": {
+                    "year": {
+                        "type": "integer"
+                    },
+                    "value": {
+                        "type": "integer"
+                    },
+                    "change": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "percent_change": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "change",
+                    "percent_change",
+                    "value",
+                    "year"
+                ]
+            },
+            "Competition": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 50
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "Event": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "maxLength": 6
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 54
+                    },
+                    "rank": {
+                        "type": "integer"
+                    },
+                    "format": {
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "cell_name": {
+                        "type": "string",
+                        "maxLength": 45
+                    }
+                },
+                "required": [
+                    "cell_name",
+                    "format",
+                    "id",
+                    "name",
+                    "rank"
+                ]
+            },
+            "EventStrength": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "event_name": {
+                        "type": "string"
+                    },
+                    "format": {
+                        "$ref": "#/components/schemas/FormatFa3Enum"
+                    },
+                    "placement": {
+                        "type": "integer"
+                    },
+                    "score": {
+                        "type": "integer"
+                    },
+                    "contributor_count": {
+                        "type": "integer"
+                    },
+                    "slots": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ScoringSlot"
+                        }
+                    }
+                },
+                "required": [
+                    "contributor_count",
+                    "event_id",
+                    "event_name",
+                    "format",
+                    "placement",
+                    "score",
+                    "slots"
+                ]
+            },
+            "FormatFa3Enum": {
+                "enum": [
+                    "single",
+                    "average"
+                ],
+                "type": "string",
+                "description": "* `single` - single\n* `average` - average"
+            },
+            "GrowthMetricResponse": {
+                "type": "object",
+                "properties": {
+                    "snapshot": {
+                        "$ref": "#/components/schemas/SnapshotMetadata"
+                    },
+                    "metric": {
+                        "type": "string"
+                    },
+                    "methodology": {
+                        "type": "string"
+                    },
+                    "coverage": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "series": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GrowthSeries"
+                        }
+                    }
+                },
+                "required": [
+                    "coverage",
+                    "methodology",
+                    "metric",
+                    "series",
+                    "snapshot"
+                ]
+            },
+            "GrowthSeries": {
+                "type": "object",
+                "properties": {
+                    "region_id": {
+                        "type": "string"
+                    },
+                    "region_name": {
+                        "type": "string"
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AnnualValue"
+                        }
+                    }
+                },
+                "required": [
+                    "region_id",
+                    "region_name",
+                    "values"
+                ]
+            },
+            "NamedIdentifier": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "News": {
+                "type": "object",
+                "properties": {
+                    "from_name": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "permalink": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "from_name",
+                    "permalink"
+                ]
+            },
+            "Person": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "maxLength": 10
+                    },
+                    "name": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 80
+                    },
+                    "country": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "gender": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "avatar": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "career": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "avatar",
+                    "career",
+                    "gender",
+                    "id"
+                ]
+            },
+            "PopularEventSeries": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "event_name": {
+                        "type": "string"
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PopularEventValue"
+                        }
+                    }
+                },
+                "required": [
+                    "event_id",
+                    "event_name",
+                    "values"
+                ]
+            },
+            "PopularEventValue": {
+                "type": "object",
+                "properties": {
+                    "year": {
+                        "type": "integer"
+                    },
+                    "participations": {
+                        "type": "integer"
+                    },
+                    "unique_competitors": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "participations",
+                    "unique_competitors",
+                    "year"
+                ]
+            },
+            "PopularEventsResponse": {
+                "type": "object",
+                "properties": {
+                    "snapshot": {
+                        "$ref": "#/components/schemas/SnapshotMetadata"
+                    },
+                    "scope": {
+                        "$ref": "#/components/schemas/NamedIdentifier"
+                    },
+                    "metric": {
+                        "type": "string"
+                    },
+                    "methodology": {
+                        "type": "string"
+                    },
+                    "coverage": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PopularEventSeries"
+                        }
+                    }
+                },
+                "required": [
+                    "coverage",
+                    "events",
+                    "methodology",
+                    "metric",
+                    "scope",
+                    "snapshot"
+                ]
+            },
+            "Region": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "RegionEnum": {
+                "enum": [
+                    "NCR",
+                    "CAR",
+                    "01",
+                    "02",
+                    "03",
+                    "4A",
+                    "4B",
+                    "05",
+                    "06",
+                    "07",
+                    "08",
+                    "09",
+                    "10",
+                    "11",
+                    "12",
+                    "13",
+                    "BARMM",
+                    "18"
+                ],
+                "type": "string",
+                "description": "* `NCR` - NCR (Luzon - Metro Manila)\n* `CAR` - CAR (Luzon - Cordillera Region)\n* `01` - Region I (Luzon - Ilocos Region)\n* `02` - Region II (Luzon - Cagayan Valley)\n* `03` - Region III (Luzon - Central Luzon)\n* `4A` - Region IV-A (Luzon - Calabarzon)\n* `4B` - Region IV-B (Luzon - Mimaropa)\n* `05` - Region V (Luzon - Bicol Region)\n* `06` - Region VI (Visayas - Western Visayas)\n* `07` - Region VII (Visayas - Central Visayas)\n* `08` - Region VIII (Visayas - Eastern Visayas)\n* `09` - Region IX (Mindanao - Zamboanga Peninsula)\n* `10` - Region X (Mindanao - Northern Mindanao)\n* `11` - Region XI (Mindanao - Davao Region)\n* `12` - Region XII (Mindanao - Soccsksargen)\n* `13` - Region XIII (Mindanao - Caraga)\n* `BARMM` - BARMM (Mindanao - Bangsamoro)\n* `18` - Region XVIII (Visayas - Negros Island Region)"
+            },
+            "RegionEventStrengthGroup": {
+                "type": "object",
+                "properties": {
+                    "region": {
+                        "$ref": "#/components/schemas/NamedIdentifier"
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventStrength"
+                        }
+                    }
+                },
+                "required": [
+                    "events",
+                    "region"
+                ]
+            },
+            "RegionStrength": {
+                "type": "object",
+                "properties": {
+                    "region_id": {
+                        "type": "string"
+                    },
+                    "region_name": {
+                        "type": "string"
+                    },
+                    "placement": {
+                        "type": "integer"
+                    },
+                    "score": {
+                        "type": "integer"
+                    },
+                    "contributor_count": {
+                        "type": "integer"
+                    },
+                    "slots": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ScoringSlot"
+                        }
+                    }
+                },
+                "required": [
+                    "contributor_count",
+                    "placement",
+                    "region_id",
+                    "region_name",
+                    "score",
+                    "slots"
+                ]
+            },
+            "RegionUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "region": {
+                        "$ref": "#/components/schemas/RegionEnum"
+                    },
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "region",
+                    "status"
+                ]
+            },
+            "RegionalStrengthEventResponse": {
+                "type": "object",
+                "properties": {
+                    "snapshot": {
+                        "$ref": "#/components/schemas/SnapshotMetadata"
+                    },
+                    "event": {
+                        "$ref": "#/components/schemas/NamedIdentifier"
+                    },
+                    "format": {
+                        "$ref": "#/components/schemas/FormatFa3Enum"
+                    },
+                    "methodology": {
+                        "type": "string"
+                    },
+                    "coverage": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "regions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RegionStrength"
+                        }
+                    }
+                },
+                "required": [
+                    "coverage",
+                    "event",
+                    "format",
+                    "methodology",
+                    "regions",
+                    "snapshot"
+                ]
+            },
+            "RegionalStrengthRegionResponse": {
+                "type": "object",
+                "properties": {
+                    "snapshot": {
+                        "$ref": "#/components/schemas/SnapshotMetadata"
+                    },
+                    "region": {
+                        "$ref": "#/components/schemas/NamedIdentifier"
+                    },
+                    "format": {
+                        "$ref": "#/components/schemas/FormatFa3Enum"
+                    },
+                    "methodology": {
+                        "type": "string"
+                    },
+                    "coverage": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventStrength"
+                        }
+                    }
+                },
+                "required": [
+                    "coverage",
+                    "events",
+                    "format",
+                    "methodology",
+                    "region",
+                    "snapshot"
+                ]
+            },
+            "RegionalStrengthRegionsResponse": {
+                "type": "object",
+                "properties": {
+                    "snapshot": {
+                        "$ref": "#/components/schemas/SnapshotMetadata"
+                    },
+                    "format": {
+                        "$ref": "#/components/schemas/RegionalStrengthRegionsResponseFormatEnum"
+                    },
+                    "methodology": {
+                        "type": "string"
+                    },
+                    "regions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RegionEventStrengthGroup"
+                        }
+                    }
+                },
+                "required": [
+                    "format",
+                    "methodology",
+                    "regions",
+                    "snapshot"
+                ]
+            },
+            "RegionalStrengthRegionsResponseFormatEnum": {
+                "enum": [
+                    "single",
+                    "average",
+                    "official"
+                ],
+                "type": "string",
+                "description": "* `single` - single\n* `average` - average\n* `official` - official"
+            },
+            "RestAuthDetail": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "detail"
+                ]
+            },
+            "Result": {
+                "type": "object",
+                "properties": {
+                    "competition": {
+                        "$ref": "#/components/schemas/Competition"
+                    },
+                    "event": {
+                        "$ref": "#/components/schemas/Event"
+                    },
+                    "value": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "person_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 80
+                    },
+                    "wca_id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "solves": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ResultSolves"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "region": {
+                        "type": "string",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "competition",
+                    "event",
+                    "region",
+                    "solves",
+                    "value",
+                    "wca_id"
+                ]
+            },
+            "ResultSolves": {
+                "type": "object",
+                "properties": {
+                    "value1": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "value2": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "value3": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "value4": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "value5": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "ScoringSlot": {
+                "type": "object",
+                "properties": {
+                    "wca_id": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "national_rank": {
+                        "type": "integer"
+                    },
+                    "is_penalty": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "is_penalty",
+                    "name",
+                    "national_rank",
+                    "wca_id"
+                ]
+            },
+            "SnapshotMetadata": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "export_version": {
+                        "type": "string"
+                    },
+                    "latest_year": {
+                        "type": "integer"
+                    },
+                    "activated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "activated_at",
+                    "export_version",
+                    "id",
+                    "latest_year"
+                ]
+            },
+            "UserDetail": {
+                "type": "object",
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "wca_id": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 64
+                    },
+                    "region": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RegionEnum"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "region_updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at"
+                ]
+            },
+            "WCALogin": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "callback_url": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "code"
+                ]
+            },
+            "Zone": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "cookieAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "sessionid"
+            },
+            "tokenAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Token-based authentication with required prefix \"Token\""
+            }
+        }
+    }
+}

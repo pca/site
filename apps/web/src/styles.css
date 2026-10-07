@@ -1,0 +1,248 @@
+@import "tailwindcss";
+@import "@fontsource-variable/rubik";
+@import "./statistics.css";
+
+@theme {
+  --color-yellow: #ffd329;
+  --color-blue: #448cc9;
+  --color-blue-light: #92b9da;
+  --color-blue-dark: #0a4c84;
+  --color-red: #ef4438;
+  --color-dark: #222222;
+  --color-light: #f8f8f8;
+  --color-text: #303030;
+  --color-gray: #eeeeee;
+  --color-gray-dark: #666666;
+
+  --font-effra: "Effra", sans-serif;
+  --font-effraMd: "Effra Medium", sans-serif;
+  --font-rubik: "Rubik Variable", "Rubik", sans-serif;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-subtitle: 1.5rem;
+  --text-subtitle--line-height: 1.75rem;
+
+  --container-1140: 1140px;
+  --container-1340: 1340px;
+}
+
+@font-face {
+  font-family: "Effra";
+  src: url("./fonts/Effra_Std_Rg.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Effra Medium";
+  src: url("./fonts/Effra_Std_Md.ttf") format("truetype");
+  font-display: swap;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Header */
+
+.site-nav {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  justify-content: flex-end;
+
+  a {
+    border-bottom: 3px solid transparent;
+    color: #222222;
+    font-family: "Effra Medium", sans-serif;
+    font-size: 0.95rem;
+    padding: 8px 0 5px;
+    text-decoration: none;
+
+    &:hover,
+    &.active {
+      border-bottom-color: #ffd329;
+    }
+
+    &:focus-visible {
+      border-radius: 3px;
+      outline: 3px solid rgba(10, 76, 132, 0.35);
+      outline-offset: 3px;
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .site-header-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .site-nav {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-nav {
+    gap: 5px 14px;
+  }
+
+  .site-nav a {
+    font-size: 0.83rem;
+  }
+}
+
+/* Rankings */
+
+.event-icon {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  margin-right: 3px;
+  opacity: 0.45;
+  padding: 2px;
+  position: relative;
+  transition: 0.3s;
+  width: 32px;
+
+  &.active,
+  &:hover {
+    opacity: 1;
+  }
+
+  img {
+    height: 28px;
+    width: 28px;
+  }
+
+  &:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid #0a4c84;
+    outline-offset: 2px;
+  }
+}
+
+.event-tooltip {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  bottom: calc(100% + 8px);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.18);
+  color: #303030;
+  font-size: 12px;
+  font-weight: 600;
+  left: 50%;
+  max-width: min(240px, calc(100vw - 32px));
+  opacity: 0;
+  padding: 5px 8px;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+  visibility: hidden;
+  white-space: nowrap;
+  width: max-content;
+  z-index: 20;
+
+  &::before,
+  &::after {
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    content: "";
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+  }
+
+  &::before {
+    border-top: 6px solid #ccc;
+    bottom: -7px;
+  }
+
+  &::after {
+    border-top: 6px solid #fff;
+    bottom: -6px;
+  }
+}
+
+.event-icon:hover .event-tooltip,
+.event-icon:focus-visible .event-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.selected-event-name {
+  align-items: center;
+  display: none;
+  font-size: 1rem;
+  gap: 6px;
+  margin: 2px 0 12px;
+
+  img {
+    height: 24px;
+    width: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-menu {
+    gap: 1px;
+  }
+
+  .event-icon {
+    height: 40px;
+    margin-right: 0;
+    width: 36px;
+  }
+
+  .event-tooltip {
+    display: none;
+  }
+
+  .selected-event-name {
+    display: inline-flex;
+  }
+}
+
+.rankings-container {
+  min-height: 400px;
+  overflow-x: auto;
+  padding-bottom: 120px;
+  width: 100%;
+}
+
+table.rankings-list {
+  white-space: nowrap;
+
+  thead tr {
+    background-color: #fff;
+    border-bottom: 2px solid #ddd;
+  }
+
+  tr {
+    border-bottom: 1px solid #ddd;
+  }
+
+  tbody tr:nth-of-type(odd) {
+    background-color: #e9e9e9;
+  }
+
+  td.name {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  tr > td:last-child {
+    width: 100%;
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "pca",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.3.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "pnpm --filter @pca/web dev",
+    "dev:admin": "pnpm --filter @pca/admin dev",
+    "build": "pnpm --filter \"./apps/*\" build && node scripts/build-sites.mjs",
+    "start": "pnpm build && node scripts/dev.mjs serve",
+    "serve": "node scripts/dev.mjs serve",
+    "db:setup": "node scripts/dev.mjs setup",
+    "db:reset": "node scripts/dev.mjs reset",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
