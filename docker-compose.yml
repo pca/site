@@ -54,8 +54,10 @@ services:
       # Extra backend services, served on this same port, e.g.
       # "/api/shop=http://shop:9000"
       UPSTREAMS: ${UPSTREAMS:-}
+    # Loopback only: on a server the reverse proxy (e.g. Dokploy's Traefik)
+    # reaches the container over the Docker network.
     ports:
-      - "${PORT:-8000}:8000"
+      - "127.0.0.1:${PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "/usr/local/bin/api", "healthcheck"]
       interval: 15s
