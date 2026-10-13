@@ -78,6 +78,18 @@ export interface StrengthByRegion {
   events: Array<StrengthRow & { event_id: string; event_name: string }>
 }
 
+export interface StrengthRegionGroup {
+  region: { id: string; name: string }
+  events: Array<StrengthRow & { event_id: string; event_name: string; format: RankingFormat }>
+}
+
+export interface StrengthRegions {
+  snapshot: Snapshot
+  format: RankingFormat | "official"
+  methodology: string
+  regions: StrengthRegionGroup[]
+}
+
 export interface GrowthCoverage {
   assigned_competitions?: number
   unclassified_competitions?: number

@@ -1,5 +1,6 @@
-import { formatNumber, type RankingFormat, type StrengthCoverage as Coverage, type StrengthSlot } from "@pca/shared"
-import { Fragment } from "react"
+import { findRegion, formatNumber, type StrengthRegionGroup, type RankingFormat, type StrengthCoverage as Coverage, type StrengthSlot } from "@pca/shared"
+import { Fragment, type CSSProperties } from "react"
+import { ZONE_COLORS } from "./regionColors"
 
 import { RegionTag } from "./RegionTag"
 
@@ -82,6 +83,125 @@ function ScoreDetails({ slots }: { slots: StrengthSlot[] }) {
   )
 }
 
+const CompactEventScore = ({ event }: { event: StrengthRegionGroup["events"][number] }) => {
+  const slots = event.slots || []
+
+  return (
+    <div className="region-card-event">
+      <div className="region-card-event-main">
+        <img src={`/images/${event.event_id}.svg`} alt="" aria-hidden="true" fetchPriority="low" />
+        <span className="region-card-event-name" title={event.event_name}>
+          {event.event_name}
+        </span>
+        <strong
+          className="region-card-event-score"
+          aria-label={`Total score ${formatNumber(event.score)}`}
+        >
+          {formatNumber(event.score)}
+        </strong>
+      </div>
+      <div
+        className="region-card-event-ranks"
+        aria-label={`Scoring ranks: ${slots.map(rankLabel).join(", ")}`}
+      >
+        {slots.map((slot, index) => (
+          <Fragment key={`${event.event_id}-${index}`}>
+            <span
+              className={slot.is_penalty ? "penalty" : ""}
+              title={slot.is_penalty ? "Empty-slot penalty rank" : undefined}
+            >
+              {rankLabel(slot)}
+            </span>
+            {index < slots.length - 1 && (
+              <span className="score-rank-separator" aria-hidden="true">
+                ·
+              </span>
+            )}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const AVAILABLE_REGION_MAPS = new Set(["03", "4B", "07", "09", "BARMM"])
+
+const RegionMapPlaceholder = ({ regionId, regionName, zone = "unknown" }: { regionId: string; regionName: string; zone?: string }) => {
+  const hasMap = AVAILABLE_REGION_MAPS.has(regionId)
+  return (
+    <div
+      className={`region-card-map-placeholder ${hasMap ? "has-map" : ""}`}
+      title={
+        hasMap ? `${regionName} map` : `${regionName} map icon placeholder`
+      }
+      style={
+        hasMap
+          ? {
+              color: ZONE_COLORS[zone] || ZONE_COLORS.unknown,
+              "--region-map-url": `url("/images/regions/${regionId}.svg")`,
+            } as CSSProperties
+          : undefined
+      }
+    >
+      {hasMap ? (
+        <span className="region-card-map-silhouette" aria-hidden="true" />
+      ) : (
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M28 6 40 10 38 20 47 25 41 34 44 43 33 57 24 48 15 51 18 39 10 32 18 24 16 13Z" />
+        </svg>
+      )}
+    </div>
+  )
+}
+
+export const RegionCards = ({ regions }: { regions: StrengthRegionGroup[] }) => (
+  <div className="region-card-grid" aria-label="Best events by region">
+    {(regions || [])
+      .filter(group => group?.region && Array.isArray(group.events))
+      .map(group => {
+        const region = findRegion(group.region.id)
+        const visibleEvents = group.events.slice(0, 3)
+        const remainingEvents = group.events.slice(3)
+        return (
+          <article className="region-card" key={group.region.id}>
+            <header className="region-card-header">
+              <RegionMapPlaceholder
+                regionId={group.region.id}
+                regionName={region?.fullName || group.region.name}
+                zone={region?.zone}
+              />
+              <RegionTag
+                regionId={group.region.id}
+                regionName={group.region.name}
+                variant="detailed"
+              />
+            </header>
+            <div className="region-card-events">
+              {visibleEvents.length ? (
+                visibleEvents.map(event => (
+                  <CompactEventScore event={event} key={event.event_id} />
+                ))
+              ) : (
+                <p className="region-card-empty">No event scores available.</p>
+              )}
+            </div>
+            {remainingEvents.length > 0 && (
+              <details className="region-card-details">
+                <summary>More details</summary>
+                <div className="region-card-events region-card-events-expanded">
+                  {remainingEvents.map(event => (
+                    <CompactEventScore event={event} key={event.event_id} />
+                  ))}
+                </div>
+              </details>
+            )}
+          </article>
+        )
+      })}
+  </div>
+)
+
+
 export interface StrengthTableRow {
   placement: number
   score: number
@@ -108,7 +228,7 @@ export function StrengthResults({
   }
   const byRegion = kind === "region"
   return (
-    <div className="statistics-table-wrap">
+    <div className="statistics-table-wrap strength-table-wrap">
       <table className={`statistics-table strength-table strength-table--${byRegion ? "events" : "regions"}`}>
         <caption className="sr-only">{byRegion ? "Regional strength by event" : "Regional strength by region"}</caption>
         <colgroup>

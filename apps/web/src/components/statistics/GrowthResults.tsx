@@ -1,38 +1,125 @@
-import {
-  findRegion,
-  formatNumber,
-  shortRegionName,
-  type GrowthCoverage as Coverage,
-  type GrowthMetric,
-  type GrowthSeries,
-  type PopularEvents,
-  type PopularEventSeries,
-} from "@pca/shared"
-import { useId } from "react"
+import { findRegion, formatNumber, shortRegionName, type GrowthCoverage as Coverage, type GrowthMetric, type GrowthSeries, type PopularEvents, type PopularEventSeries } from "@pca/shared"
+import { useEffect, useId, useMemo, useRef, type CSSProperties } from "react"
 
+import { getRegionColor } from "./regionColors"
 import { RegionTag } from "./RegionTag"
 
-const CHART_COLORS = ["#0A4C84", "#B24400", "#5A3B8C", "#147D64", "#B42345", "#6C5B00"]
-const REGION_CHART_COLORS: Record<string, string> = { luzon: "#9A6500", visayas: "#0A4C84", mindanao: "#A62D24" }
-const REGION_LINE_PATTERNS = ["", "10 5", "3 4", "12 4 2 4", "7 3", "2 3"]
-
-type Point = { year: number } & Record<string, number | null>
+type Point = { year: number; value?: number; participations?: number; unique_competitors?: number }
 type Series = { region_id?: string; region_name?: string; event_id?: string; event_name?: string; values: Point[] }
+type ValueKey = "value" | "participations" | "unique_competitors"
+type ChartStyle = { color: string; dash: string; groupId?: string }
+export type YearRange = "5" | "10" | "15" | "all"
+type RangeProps = { yearRange: YearRange; onYearRangeChange: (range: YearRange) => void }
 
-const seriesKey = (item: Series) => item.region_id || item.event_id || ""
-const seriesName = (item: Series) => item.region_name || item.event_name || ""
+const CHART_COLORS = [
+  "#168BFF",
+  "#FF8A00",
+  "#8B5CF6",
+  "#10B981",
+  "#F43F5E",
+  "#EAB308",
+]
 
-function chartStyles(series: Series[]) {
+const EVENT_GROUPS = [
+  {
+    id: "cube",
+    label: "Cube events",
+    eventIds: ["333", "222", "444", "555", "666", "777"],
+    colors: ["#168BFF", "#4DA3FF", "#0070D9", "#005EB8", "#004B93", "#003A73"],
+  },
+  {
+    id: "blindfolded",
+    label: "Blindfolded",
+    eventIds: ["333bf", "444bf", "555bf", "333mbf", "333mbo"],
+    colors: ["#C4B5FD", "#A78BFA", "#8B5CF6", "#7C3AED", "#5B21B6"],
+  },
+  {
+    id: "variants",
+    label: "3×3 variants",
+    eventIds: ["333oh", "333fm", "333ft"],
+    colors: ["#2DD4BF", "#14B8A6", "#0F766E"],
+  },
+  {
+    id: "other",
+    label: "Other puzzles",
+    eventIds: [
+      "clock",
+      "minx",
+      "pyram",
+      "skewb",
+      "sq1",
+      "magic",
+      "mmagic",
+      "fto",
+    ],
+    colors: [
+      "#FDE047",
+      "#FACC15",
+      "#FBBF24",
+      "#F59E0B",
+      "#F97316",
+      "#EA580C",
+      "#DC2626",
+      "#BE123C",
+    ],
+  },
+]
+
+const EVENT_LINE_PATTERNS = [
+  "",
+  "10 4",
+  "3 3",
+  "12 4 2 4",
+  "6 3",
+  "2 3",
+  "14 3 3 3",
+  "1 3",
+]
+
+const EVENT_STYLES = EVENT_GROUPS.reduce<Record<string, ChartStyle>>((styles, group) => {
+  group.eventIds.forEach((eventId, index) => {
+    styles[eventId] = {
+      color: group.colors[index],
+      dash: EVENT_LINE_PATTERNS[index % EVENT_LINE_PATTERNS.length],
+      groupId: group.id,
+    }
+  })
+  return styles
+}, {})
+
+const REGION_LINE_PATTERNS = ["", "10 5", "3 4", "12 4 2 4", "7 3", "2 3"]
+const YEAR_RANGE_OPTIONS: { value: YearRange; label: string }[] = [
+  { value: "5", label: "5 years" },
+  { value: "10", label: "10 years" },
+  { value: "15", label: "15 years" },
+  { value: "all", label: "All years" },
+]
+
+const rangeSize = (value: YearRange) =>
+  value === "all" ? Number.POSITIVE_INFINITY : Number(value)
+
+const PANDEMIC_YEARS = new Set([2021])
+
+const chartStyles = (series: Series[]): ChartStyle[] => {
   const zoneCounts: Record<string, number> = {}
   return series.map((item, index) => {
-    const fallback = { color: CHART_COLORS[index % CHART_COLORS.length], dash: "" }
-    if (!item.region_id || item.region_id === "national") return fallback
-    const zone = findRegion(item.region_id)?.zone
-    const color = zone && REGION_CHART_COLORS[zone]
-    if (!zone || !color) return fallback
+    if (!item.region_id || item.region_id === "national") {
+      return (
+        EVENT_STYLES[item.event_id || ""] || {
+          color: CHART_COLORS[index % CHART_COLORS.length],
+          dash: EVENT_LINE_PATTERNS[index % EVENT_LINE_PATTERNS.length],
+          groupId: "other",
+        }
+      )
+    }
+    const region = findRegion(item.region_id)
+    const zone = region?.zone || "unknown"
     const zoneIndex = zoneCounts[zone] || 0
     zoneCounts[zone] = zoneIndex + 1
-    return { color, dash: REGION_LINE_PATTERNS[zoneIndex % REGION_LINE_PATTERNS.length] }
+    return {
+      color: getRegionColor(item.region_id, zone),
+      dash: REGION_LINE_PATTERNS[zoneIndex % REGION_LINE_PATTERNS.length],
+    }
   })
 }
 
@@ -41,119 +128,365 @@ const latestPoint = <T,>(series: { values: T[] }) => series.values?.[series.valu
 export const topRegionalSeries = (series?: GrowthSeries[]) =>
   [...(series || [])]
     .filter(item => item.region_id !== "national")
-    .sort((a, b) => (latestPoint(b)?.value || 0) - (latestPoint(a)?.value || 0))
+    .sort(
+      (left, right) =>
+        (latestPoint(right)?.value || 0) - (latestPoint(left)?.value || 0),
+    )
     .slice(0, 6)
 
 export const topEventSeries = (events?: PopularEventSeries[]) =>
   (events || [])
-    .map(event => ({ ...event, total: event.values.reduce((sum, point) => sum + point.participations, 0) }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 6)
+    .map(event => ({
+      ...event,
+      total: event.values.reduce((sum, point) => sum + point.participations, 0),
+    }))
+    .sort((left, right) => right.total - left.total)
 
-const yearsOf = (series: Series[]) => [...new Set(series.flatMap(item => item.values.map(point => point.year)))].sort()
+const ChartLineSwatch = ({ style }: { style: ChartStyle }) => (
+  <svg className="chart-line-swatch" viewBox="0 0 22 6" aria-hidden="true">
+    <line
+      x1="1"
+      x2="21"
+      y1="3"
+      y2="3"
+      stroke={style.color}
+      strokeDasharray={style.dash || undefined}
+    />
+  </svg>
+)
 
-const valueFor = (series: Series, year: number, valueKey: string) => {
+const EventChartLegend = ({ series, styles }: { series: Series[]; styles: ChartStyle[] }) => {
+  const groups = EVENT_GROUPS.map(group => ({
+    ...group,
+    items: series
+      .map((item, index) => ({ item, style: styles[index] }))
+      .filter(({ style }) => style.groupId === group.id)
+      .sort(
+        (left, right) =>
+          group.eventIds.indexOf(left.item.event_id || "") -
+          group.eventIds.indexOf(right.item.event_id || ""),
+      ),
+  })).filter(group => group.items.length)
+
+  return (
+    <div
+      className="chart-legend chart-event-legend"
+      aria-label="Chart legend grouped by event family"
+    >
+      {groups.map(group => (
+        <div className="chart-legend-group" key={group.id}>
+          <strong>{group.label}</strong>
+          <div>
+            {group.items.map(({ item, style }) => (
+              <span key={item.event_id}>
+                <ChartLineSwatch style={style} />
+                {shortRegionName(item.event_name || "")}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const valueFor = (series: Series, year: number, valueKey: ValueKey) => {
   const point = series.values.find(item => item.year === year)
   return point ? Number(point[valueKey] || 0) : 0
 }
 
-function SeriesLabel({ item, color }: { item: Series; color: string }) {
-  if (item.region_id) return <RegionTag regionId={item.region_id} regionName={item.region_name} color={color} />
-  return (
-    <>
-      <i style={{ backgroundColor: color }} aria-hidden="true" />
-      {shortRegionName(item.event_name || "")}
-    </>
+const formatShare = (value: number | null, total: number) =>
+  total ? `${((Number(value) / total) * 100).toFixed(1)}%` : "0.0%"
+
+const filterSeriesByYearRange = <T extends Series,>(series: T[], yearRange: YearRange): T[] => {
+  if (yearRange === "all") return series
+  const availableYears = series.flatMap(item =>
+    item.values.map(point => Number(point.year)),
   )
+  if (!availableYears.length) return series
+  const latestYear = Math.max(...availableYears)
+  const firstYear = latestYear - Number(yearRange) + 1
+  return series.map(item => ({
+    ...item,
+    values: item.values.filter(point => Number(point.year) >= firstYear),
+  }))
 }
 
-function LineChart({ series, valueKey = "value", title }: { series: Series[]; valueKey?: string; title: string }) {
+const omitInactiveYears = <T extends Series,>(series: T[], valueKey: ValueKey): T[] => {
+  const activeYears = new Set<number>()
+  series.forEach(item => {
+    item.values.forEach(point => {
+      if (
+        !PANDEMIC_YEARS.has(Number(point.year)) &&
+        Number(point[valueKey] || 0) > 0
+      ) {
+        activeYears.add(point.year)
+      }
+    })
+  })
+  return series.map(item => ({
+    ...item,
+    values: item.values.filter(point => activeYears.has(point.year)),
+  }))
+}
+
+const YearRangeControl = ({ value, onChange }: { value: YearRange; onChange: (range: YearRange) => void }) => (
+  <fieldset className="chart-range-control">
+    <legend>Years shown</legend>
+    <div>
+      {YEAR_RANGE_OPTIONS.map(option => (
+        <button
+          type="button"
+          className={value === option.value ? "active" : ""}
+          aria-pressed={value === option.value}
+          key={option.value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  </fieldset>
+)
+
+const LineChart = ({
+  series,
+  valueKey = "value",
+  title,
+  yearRange,
+  onYearRangeChange,
+  height = 290,
+}: { series: Series[]; valueKey?: ValueKey; title: string; height?: number } & RangeProps) => {
+  const chartId = useId()
+  const previousYearRange = useRef(yearRange)
   const width = 900
-  const height = 360
-  const margin = { top: 20, right: 24, bottom: 46, left: 62 }
-  const ids = useId()
-  const years = yearsOf(series)
+  const margin = { top: 16, right: 24, bottom: 42, left: 62 }
+  const years = useMemo(
+    () =>
+      [
+        ...new Set(
+          series.flatMap(item => item.values.map(point => point.year)),
+        ),
+      ].sort(),
+    [series],
+  )
+  const maxValue = Math.max(
+    1,
+    ...series.flatMap(item =>
+      item.values.map(point => Number(point[valueKey] || 0)),
+    ),
+  )
+  const x = (year: number) =>
+    margin.left +
+    ((year - years[0]) / Math.max(1, years[years.length - 1] - years[0])) *
+      (width - margin.left - margin.right)
+  const y = (value: number) =>
+    height -
+    margin.bottom -
+    (value / maxValue) * (height - margin.top - margin.bottom)
+  const tickYears = years.filter((year, index) => {
+    if (index === 0 || index === years.length - 1) return true
+    if (years.length <= 10) return true
+    return Number(year) % 2 === 0
+  })
+  const gridValues = [
+    ...new Set(
+      [0, 0.25, 0.5, 0.75, 1].map(ratio => Math.round(maxValue * ratio)),
+    ),
+  ]
+  const styles = chartStyles(series)
+  const rangeAnimation =
+    previousYearRange.current === yearRange
+      ? ""
+      : rangeSize(yearRange) < rangeSize(previousYearRange.current)
+        ? "chart-range-zoom-in"
+        : "chart-range-zoom-out"
+
+  useEffect(() => {
+    previousYearRange.current = yearRange
+  }, [yearRange])
 
   if (!series.length || !years.length) {
-    return <p className="statistics-empty">There is no chart data for this selection.</p>
+    return (
+      <p className="statistics-empty">
+        There is no chart data for this selection.
+      </p>
+    )
   }
-
-  const maxValue = Math.max(1, ...series.flatMap(item => item.values.map(point => Number(point[valueKey] || 0))))
-  const first = years[0]
-  const last = years[years.length - 1]
-  const x = (year: number) => margin.left + ((year - first) / Math.max(1, last - first)) * (width - margin.left - margin.right)
-  const y = (value: number) => height - margin.bottom - (value / maxValue) * (height - margin.top - margin.bottom)
-  const tickYears = years.filter((_, index) => index === 0 || index === years.length - 1 || index % 4 === 0)
-  const gridValues = [...new Set([0, 0.25, 0.5, 0.75, 1].map(ratio => Math.round(maxValue * ratio)))]
-  const styles = chartStyles(series)
-  const titleId = `${ids}-title`
-  const descId = `${ids}-desc`
 
   return (
     <figure className="statistics-chart">
-      <figcaption>{title}</figcaption>
-      <div className="chart-legend" aria-label="Chart legend">
-        {series.map((item, index) => (
-          <span key={seriesKey(item)}>
-            <SeriesLabel item={item} color={styles[index].color} />
-          </span>
-        ))}
+      <div className="statistics-chart-heading">
+        <figcaption>{title}</figcaption>
+        <YearRangeControl value={yearRange} onChange={onYearRangeChange} />
       </div>
+      {series[0]?.event_id ? (
+        <EventChartLegend series={series} styles={styles} />
+      ) : (
+        <div className="chart-legend" aria-label="Chart legend">
+          {series.map((item, index) => (
+            <span key={item.region_id || item.event_id}>
+              <RegionTag
+                regionId={item.region_id}
+                regionName={item.region_name}
+                color={styles[index].color}
+              />
+            </span>
+          ))}
+        </div>
+      )}
       <div className="chart-scroll">
-        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${titleId} ${descId}`}>
-          <title id={titleId}>{title}</title>
-          <desc id={descId}>
-            A line chart from {first} through {last}. Exact values are available in the table below.
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-labelledby={`${chartId}-title ${chartId}-desc`}
+        >
+          <title id={`${chartId}-title`}>{title}</title>
+          <desc id={`${chartId}-desc`}>
+            A line chart from {years[0]} through {years[years.length - 1]}.
+            Exact values are available in the table below.
           </desc>
-          {gridValues.map(value => (
-            <g key={value}>
-              <line className="chart-grid" x1={margin.left} x2={width - margin.right} y1={y(value)} y2={y(value)} />
-              <text className="chart-axis-label" x={margin.left - 10} y={y(value) + 4} textAnchor="end">
-                {formatNumber(value)}
-              </text>
-            </g>
-          ))}
-          {tickYears.map(year => (
-            <text className="chart-axis-label" key={year} x={x(year)} y={height - 16} textAnchor="middle">
-              {year}
-            </text>
-          ))}
-          {series.map((item, index) => {
-            const style = styles[index]
-            const points = years.map(year => `${x(year)},${y(valueFor(item, year, valueKey))}`).join(" ")
-            return (
-              <g key={seriesKey(item)}>
-                <polyline className="chart-line" points={points} stroke={style.color} strokeDasharray={style.dash || undefined} />
-                {years.map(year => (
-                  <circle key={year} cx={x(year)} cy={y(valueFor(item, year, valueKey))} r="2.5" fill={style.color}>
-                    <title>{`${seriesName(item)}, ${year}: ${formatNumber(valueFor(item, year, valueKey))}`}</title>
-                  </circle>
-                ))}
+          <defs>
+            <clipPath id={`${chartId}-clip`}>
+              <rect
+                x={margin.left - 4}
+                y={margin.top - 4}
+                width={width - margin.left - margin.right + 8}
+                height={height - margin.top - margin.bottom + 8}
+              />
+            </clipPath>
+          </defs>
+          <g
+            className={rangeAnimation ? "chart-range-axis-transition" : ""}
+            key={`axis-${yearRange}`}
+          >
+            {gridValues.map(value => (
+              <g key={value}>
+                <line
+                  className="chart-grid"
+                  x1={margin.left}
+                  x2={width - margin.right}
+                  y1={y(value)}
+                  y2={y(value)}
+                />
+                <text
+                  className="chart-axis-label"
+                  x={margin.left - 10}
+                  y={y(value) + 4}
+                  textAnchor="end"
+                >
+                  {formatNumber(value)}
+                </text>
               </g>
-            )
-          })}
+            ))}
+            {tickYears.map(year => (
+              <text
+                className="chart-axis-label"
+                key={year}
+                x={x(year)}
+                y={height - 16}
+                textAnchor="middle"
+              >
+                {year}
+              </text>
+            ))}
+          </g>
+          <g
+            className={rangeAnimation}
+            clipPath={`url(#${chartId}-clip)`}
+            key={`series-${yearRange}`}
+          >
+            {series.map((item, index) => {
+              const style = styles[index]
+              const visualOffset = item.event_id ? -index * 0.55 : 0
+              const points = years
+                .map(year => `${x(year)},${y(valueFor(item, year, valueKey))}`)
+                .join(" ")
+              return (
+                <g
+                  key={item.region_id || item.event_id}
+                  transform={
+                    visualOffset ? `translate(0 ${visualOffset})` : undefined
+                  }
+                >
+                  <polyline
+                    className="chart-line"
+                    points={points}
+                    stroke={style.color}
+                    strokeDasharray={style.dash || undefined}
+                    strokeDashoffset={index * 2}
+                  />
+                  {years.map(year => (
+                    <circle
+                      key={year}
+                      cx={x(year)}
+                      cy={y(valueFor(item, year, valueKey))}
+                      className="chart-point"
+                      r="2.5"
+                      fill={style.color}
+                    >
+                      <title>{`${item.region_name || item.event_name}, ${year}: ${formatNumber(valueFor(item, year, valueKey))}`}</title>
+                    </circle>
+                  ))}
+                </g>
+              )
+            })}
+          </g>
         </svg>
       </div>
     </figure>
   )
 }
 
-function HistoryTable({ series, valueKey = "value", secondaryKey }: { series: Series[]; valueKey?: string; secondaryKey?: string }) {
-  const years = yearsOf(series)
+const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Series[]; valueKey?: ValueKey; secondaryKey?: ValueKey }) => {
+  const years = [
+    ...new Set(series.flatMap(item => item.values.map(point => point.year))),
+  ].sort()
   const styles = chartStyles(series)
+  const totalsByYear = secondaryKey
+    ? Object.fromEntries(
+        years.map(year => [
+          year,
+          {
+            primary: series.reduce(
+              (sum, item) => sum + valueFor(item, year, valueKey),
+              0,
+            ),
+            secondary: series.reduce(
+              (sum, item) => sum + valueFor(item, year, secondaryKey),
+              0,
+            ),
+          },
+        ]),
+      )
+    : {}
+  const minimumWidth = series[0]?.event_id
+    ? Math.max(912, 90 + series.length * 125)
+    : 912
   return (
     <div className="statistics-table-wrap history-table-wrap">
-      <table className="statistics-table history-table">
+      <table
+        className="statistics-table history-table"
+        style={{ minWidth: `${minimumWidth}px` }}
+      >
         <caption>Exact values shown in the chart</caption>
         <thead>
           <tr>
             <th scope="col">Year</th>
             {series.map((item, index) => (
-              <th scope="col" key={seriesKey(item)}>
+              <th scope="col" key={item.region_id || item.event_id}>
                 {item.region_id ? (
-                  <RegionTag regionId={item.region_id} regionName={item.region_name} color={styles[index].color} />
+                  <RegionTag
+                    regionId={item.region_id}
+                    regionName={item.region_name}
+                    variant="table"
+                    color={styles[index].color}
+                  />
                 ) : (
-                  shortRegionName(item.event_name || "")
+                  <span className="statistics-event-series-label">
+                    <ChartLineSwatch style={styles[index]} />
+                    {shortRegionName(item.event_name || "")}
+                  </span>
                 )}
                 {secondaryKey && <small>Participation / competitors</small>}
               </th>
@@ -164,12 +497,32 @@ function HistoryTable({ series, valueKey = "value", secondaryKey }: { series: Se
           {years.map(year => (
             <tr key={year}>
               <th scope="row">{year}</th>
-              {series.map(item => (
-                <td key={seriesKey(item)}>
-                  {formatNumber(valueFor(item, year, valueKey))}
-                  {secondaryKey ? ` / ${formatNumber(valueFor(item, year, secondaryKey))}` : ""}
-                </td>
-              ))}
+              {series.map((item, index) => {
+                const primary = valueFor(item, year, valueKey)
+                const secondary = secondaryKey
+                  ? valueFor(item, year, secondaryKey)
+                  : null
+                return (
+                  <td key={item.region_id || item.event_id}>
+                    {secondaryKey ? (
+                      <span
+                        className="history-value-pair"
+                        style={{ "--series-color": styles[index].color } as CSSProperties}
+                      >
+                        <strong className="history-share-value">
+                          {formatShare(primary, totalsByYear[year].primary)} /{" "}
+                          {formatShare(secondary, totalsByYear[year].secondary)}
+                        </strong>
+                        <small className="history-count-value">
+                          {formatNumber(primary)} / {formatNumber(secondary)}
+                        </small>
+                      </span>
+                    ) : (
+                      formatNumber(primary)
+                    )}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>
@@ -178,7 +531,7 @@ function HistoryTable({ series, valueKey = "value", secondaryKey }: { series: Se
   )
 }
 
-export function GrowthCoverage({ coverage }: { coverage?: Coverage }) {
+export const GrowthCoverage = ({ coverage }: { coverage?: Coverage }) => {
   if (!coverage || coverage.assigned_competitions === undefined) return null
   const assigned = Number(coverage.assigned_competitions || 0)
   const unclassified = Number(coverage.unclassified_competitions || 0)
@@ -186,9 +539,12 @@ export function GrowthCoverage({ coverage }: { coverage?: Coverage }) {
   const percent = total ? ((assigned / total) * 100).toFixed(1) : "0.0"
   return (
     <aside className="statistics-coverage growth-coverage">
-      <strong>Competition-location coverage:</strong> {formatNumber(assigned)} of {formatNumber(total)} Philippine
-      competitions ({percent}%) were automatically matched to a region.
-      {unclassified > 0 ? ` ${formatNumber(unclassified)} remained unclassified and were excluded from regional totals.` : ""}
+      <strong>Competition-location coverage:</strong> {formatNumber(assigned)}{" "}
+      of {formatNumber(total)} Philippine competitions ({percent}%) were
+      automatically matched to a region.
+      {unclassified > 0
+        ? ` ${formatNumber(unclassified)} remained unclassified and were excluded from regional totals.`
+        : ""}
     </aside>
   )
 }
@@ -236,10 +592,18 @@ function LatestRegionalTable({ series, metricLabel }: { series?: GrowthSeries[];
   )
 }
 
-export function RegionalGrowthResults({ data, metricLabel }: { data: GrowthMetric; metricLabel: string }) {
-  const chartSeries = topRegionalSeries(data.series) as unknown as Series[]
+export const RegionalGrowthResults = ({
+  data,
+  metricLabel,
+  yearRange,
+  onYearRangeChange,
+}: { data: GrowthMetric; metricLabel: string } & RangeProps) => {
+  const chartSeries = filterSeriesByYearRange(
+    topRegionalSeries(data.series),
+    yearRange,
+  )
   const national = data.series?.find(item => item.region_id === "national")
-  const nationalLatest = national ? latestPoint(national) : undefined
+  const nationalLatest = national ? latestPoint(national) : null
   return (
     <>
       {nationalLatest && (
@@ -249,22 +613,48 @@ export function RegionalGrowthResults({ data, metricLabel }: { data: GrowthMetri
           <small>{metricLabel.toLowerCase()}</small>
         </div>
       )}
-      <LineChart series={chartSeries} title={`Top regions by ${metricLabel.toLowerCase()}`} />
+      <LineChart
+        series={chartSeries}
+        title={`Top regions by ${metricLabel.toLowerCase()}`}
+        yearRange={yearRange}
+        onYearRangeChange={onYearRangeChange}
+      />
       <HistoryTable series={chartSeries} />
       <LatestRegionalTable series={data.series} metricLabel={metricLabel} />
     </>
   )
 }
 
-export function PopularEventResults({ data }: { data: PopularEvents }) {
-  const chartSeries = topEventSeries(data.events) as unknown as Series[]
+export const PopularEventResults = ({ data, yearRange, onYearRangeChange }: { data: PopularEvents } & RangeProps) => {
+  const chartSeries = filterSeriesByYearRange(
+    topEventSeries(omitInactiveYears(data.events || [], "participations")),
+    yearRange,
+  )
   return (
     <>
-      <LineChart series={chartSeries} valueKey="participations" title={`Most popular events in ${data.scope.name}`} />
-      <HistoryTable series={chartSeries} valueKey="participations" secondaryKey="unique_competitors" />
+      <LineChart
+        series={chartSeries}
+        valueKey="participations"
+        title={`Most popular events in ${data.scope.name}`}
+        yearRange={yearRange}
+        onYearRangeChange={onYearRangeChange}
+        height={320}
+      />
+      <p className="statistics-chart-note">
+        The inactive 2021 season is omitted because it has no recorded
+        competition activity. Event lines use small visual offsets to reveal
+        equal and overlapping values; exact values are listed below.
+      </p>
+      <HistoryTable
+        series={chartSeries}
+        valueKey="participations"
+        secondaryKey="unique_competitors"
+      />
       <p className="statistics-footnote">
-        Table cells show participations first and unique competitors second. One competitor may contribute more than one
-        participation by attending multiple competitions.
+        Table cells show participations and unique competitors, followed by each
+        event&apos;s percentage share of the year&apos;s summed event totals.
+        One competitor can appear in more than one event and may contribute
+        multiple participations by attending multiple competitions.
       </p>
     </>
   )

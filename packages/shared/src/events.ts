@@ -41,3 +41,8 @@ export const findEvent = (id: string) => EVENTS.find(event => event.id === id)
 
 export const isActiveEventId = (id: unknown): id is string =>
   typeof id === "string" && ACTIVE_EVENTS.some(event => event.id === id)
+
+/** Result type used for comparing regional strength in each event. */
+const OFFICIAL_SINGLE_EVENTS = new Set(["333bf", "444bf", "555bf", "333mbf"])
+export const officialRankingFormat = (eventId: string): "single" | "average" =>
+  OFFICIAL_SINGLE_EVENTS.has(eventId) ? "single" : "average"

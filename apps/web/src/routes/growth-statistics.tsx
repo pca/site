@@ -2,7 +2,9 @@ import { isRegionId, REGIONS } from "@pca/shared"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useHydrated, useNavigate } from "@tanstack/react-router"
 
-import { GrowthCoverage, PopularEventResults, RegionalGrowthResults } from "../components/statistics/GrowthResults"
+import { useState } from "react"
+
+import { GrowthCoverage, PopularEventResults, RegionalGrowthResults, type YearRange } from "../components/statistics/GrowthResults"
 import { Methodology, SnapshotNote, StatisticsPage, StatisticsStatus } from "../components/statistics/StatisticsPage"
 import { growthQuery, prefetchForPrerender, type GrowthMetricId } from "../lib/queries"
 import { pageHead } from "../lib/seo"
@@ -40,6 +42,7 @@ export const Route = createFileRoute("/growth-statistics")({
 })
 
 function GrowthStatistics() {
+  const [yearRange, setYearRange] = useState<YearRange>("10")
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const hydrated = useHydrated()
@@ -91,13 +94,15 @@ function GrowthStatistics() {
       {data && !query.isError && (
         <section aria-live="polite">
           <Methodology>{data.methodology}</Methodology>
-          <GrowthCoverage coverage={data.coverage} />
-          <SnapshotNote snapshot={data.snapshot} />
           {"events" in data ? (
-            <PopularEventResults data={data} />
+            <PopularEventResults data={data} yearRange={yearRange} onYearRangeChange={setYearRange} />
           ) : (
-            <RegionalGrowthResults data={data} metricLabel={definition.resultLabel} />
+            <RegionalGrowthResults data={data} metricLabel={definition.resultLabel} yearRange={yearRange} onYearRangeChange={setYearRange} />
           )}
+          <div className="growth-results-notes">
+            <GrowthCoverage coverage={data.coverage} />
+            <SnapshotNote snapshot={data.snapshot} />
+          </div>
         </section>
       )}
     </StatisticsPage>

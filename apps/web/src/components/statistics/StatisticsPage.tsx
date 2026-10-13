@@ -1,6 +1,5 @@
 import { ApiError, NetworkError, type Snapshot } from "@pca/shared"
-import { Link } from "@tanstack/react-router"
-import type { ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 
 import { Layout } from "../Layout"
 
@@ -11,45 +10,58 @@ export interface Tab<T extends string> {
 
 interface StatisticsPageProps<T extends string> {
   title: string
-  description: string
+  description?: string
   tabs: readonly Tab<T>[]
   activeTab: T
   onTabChange: (tab: T) => void
   children: ReactNode
 }
 
+function ScrollableTabs<T extends string>({ title, tabs, activeTab, onTabChange }: Pick<StatisticsPageProps<T>, "title" | "tabs" | "activeTab" | "onTabChange">) {
+  const tabsRef = useRef<HTMLElement>(null)
+  const [overflowEdges, setOverflowEdges] = useState({ left: false, right: false })
+
+  useEffect(() => {
+    const element = tabsRef.current
+    if (!element) return
+    const updateEdges = () => {
+      const maximumScroll = element.scrollWidth - element.clientWidth
+      setOverflowEdges({ left: element.scrollLeft > 2, right: maximumScroll - element.scrollLeft > 2 })
+    }
+    element.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" })
+    updateEdges()
+    element.addEventListener("scroll", updateEdges, { passive: true })
+    window.addEventListener("resize", updateEdges)
+    return () => {
+      element.removeEventListener("scroll", updateEdges)
+      window.removeEventListener("resize", updateEdges)
+    }
+  }, [activeTab, tabs])
+
+  return (
+    <div className={`statistics-tabs-shell${overflowEdges.left ? " has-left-overflow" : ""}${overflowEdges.right ? " has-right-overflow" : ""}`}>
+      <nav ref={tabsRef} className="statistics-tabs" aria-label={`${title} views`}>
+        {tabs.map(tab => (
+          <button key={tab.id} type="button" className={activeTab === tab.id ? "active" : ""} aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => onTabChange(tab.id)}>
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
 export function StatisticsPage<T extends string>({ title, description, tabs, activeTab, onTabChange, children }: StatisticsPageProps<T>) {
   return (
     <Layout className="statistics-site">
       <div className="statistics-page max-w-1340 mx-auto px-4 sm:px-6">
-        <nav className="statistics-section-nav" aria-label="Statistics pages">
-          <Link to="/regional-statistics" activeProps={{ className: "active" }}>
-            Regional Statistics
-          </Link>
-          <Link to="/growth-statistics" activeProps={{ className: "active" }}>
-            Growth Statistics
-          </Link>
-        </nav>
-
         <header className="statistics-heading">
           <span className="statistics-eyebrow">Philippine cubing by region</span>
           <h1>{title}</h1>
-          <p>{description}</p>
+          {description && <p>{description}</p>}
         </header>
 
-        <nav className="statistics-tabs" aria-label={`${title} views`}>
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              className={activeTab === tab.id ? "active" : ""}
-              aria-current={activeTab === tab.id ? "page" : undefined}
-              onClick={() => onTabChange(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        <ScrollableTabs title={title} tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
 
         {children}
       </div>
@@ -108,7 +120,7 @@ export function Methodology({ children }: { children: ReactNode }) {
   )
 }
 
-export function SnapshotNote({ snapshot, showPreviewWarning = false }: { snapshot?: Snapshot; showPreviewWarning?: boolean }) {
+export function SnapshotNote({ snapshot, showPreviewWarning = false, showSource = true, className = "" }: { snapshot?: Snapshot; showPreviewWarning?: boolean; showSource?: boolean; className?: string }) {
   if (!snapshot) return null
   const isPreview = /preview/i.test(snapshot.export_version || "")
   return (
@@ -122,10 +134,10 @@ export function SnapshotNote({ snapshot, showPreviewWarning = false }: { snapsho
           </p>
         </aside>
       )}
-      <p className="statistics-snapshot">
+      {showSource && <p className={`statistics-snapshot ${className}`.trim()}>
         Prepared from WCA export <strong>{snapshot.export_version}</strong>
         {snapshot.latest_year ? ` · Through ${snapshot.latest_year}` : ""}
-      </p>
+      </p>}
     </>
   )
 }

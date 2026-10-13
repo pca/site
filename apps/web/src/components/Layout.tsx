@@ -36,14 +36,17 @@ function Header() {
 
           <nav className="site-nav" aria-label="Main navigation">
             <Link to="/regional-rankings" activeProps={{ className: "active" }}>
-              Rankings
+              Regional Rankings
             </Link>
             <Link to="/regional-statistics" activeProps={{ className: "active" }}>
               Regional Statistics
             </Link>
-            <Link to="/growth-statistics" activeProps={{ className: "active" }}>
-              Growth Statistics
-            </Link>
+            {import.meta.env.DEV && (
+              <Link to="/growth-statistics" activeProps={{ className: "active" }}>
+                Growth Statistics
+              </Link>
+            )}
+            <a href="https://arena.pinoycubers.org">Arena</a>
           </nav>
         </div>
       </div>
@@ -64,7 +67,7 @@ function Footer() {
             <span role="img" aria-label="heart">
               ❤️
             </span>{" "}
-            by PCA
+            by PCA Dev Team
           </p>
           <div className="flex items-center gap-3 text-text">
             <a href={PCA_FACEBOOK_URL} aria-label="PCA on Facebook" rel="noopener">

@@ -1,11 +1,13 @@
 import {
   fetchJson,
+  officialRankingFormat,
   type GrowthMetric,
   type PopularEvents,
   type RankingFormat,
   type RankingRow,
   type StrengthByEvent,
   type StrengthByRegion,
+  type StrengthRegions,
 } from "@pca/shared"
 import { queryOptions } from "@tanstack/react-query"
 
@@ -29,6 +31,19 @@ export const strengthQuery = (tab: "event" | "region", id: string, format: Ranki
     queryFn: ({ signal }) =>
       fetchJson<StrengthByEvent | StrengthByRegion>(
         apiUrl(`statistics/regional/strength/${tab === "event" ? "events" : "regions"}/${id}/?format=${format}`),
+        { signal },
+      ),
+  })
+
+/** Statistics views use the official result type and the all-regions endpoint. */
+export const regionalStatisticsQuery = (tab: "event" | "region", event = "333") =>
+  queryOptions({
+    queryKey: tab === "event" ? ["strength", "event", event, officialRankingFormat(event)] : ["strength", "regions", "official"],
+    queryFn: ({ signal }) =>
+      fetchJson<StrengthByEvent | StrengthRegions>(
+        apiUrl(tab === "event"
+          ? `statistics/regional/strength/events/${event}/?format=${officialRankingFormat(event)}`
+          : "statistics/regional/strength/regions/?format=official"),
         { signal },
       ),
   })
