@@ -51,19 +51,32 @@ notation; it needs no functional port. The old constants.js environment switch i
 represented by Site's existing Vite /api and local proxy configuration rather
 than copying Gatsby environment variables.
 
-## Separate later work left in the old checkout
+## Follow-up work transferred
 
-The old checkout also contains uncommitted changes in GrowthResults.js,
-StrengthResults.js and statistics.scss, plus 13 untracked region SVGs. These are
-not included in the ahead commit and have not been transferred or discarded.
-This includes later chart sizing/spacing/heatmap adjustments and the remaining
-region icons. They require a separate transfer.
+The old checkout's later uncommitted changes in GrowthResults.js,
+StrengthResults.js and statistics.scss were adapted into Site after the initial
+port. The follow-up adds all 18 region silhouettes, region-table icons, expanded
+region-card details, compact event-family legends, chart sizing and even year
+spacing, vertically scaled percentage heatmaps, methodology and note spacing,
+and the multi-city coverage explanation. The heatmap calculation is also guarded
+when a history table has no secondary metric.
+
+The 13 additional SVGs under the old checkout's static/images/regions directory
+were copied into apps/web/public/images/regions and verified byte-for-byte. The
+old checkout remains unchanged.
 
 ## Validation
 
 - Shared-package and public-frontend TypeScript checks passed.
 - Public frontend production build passed, including all six prerendered pages.
 - All five transferred region SVGs match the source commit's Git blob hashes.
+- The follow-up shared-package and public-frontend TypeScript checks passed.
+- The follow-up public frontend production build passed, including all six
+  prerendered pages.
+- All 18 region SVGs returned HTTP 200 from the local Vite server, and the 13
+  follow-up SVGs match the old checkout byte-for-byte.
+- The local Go API passed its test suite, initialized from the development seed,
+  and served the statistics views used for visual checks.
 - The patch passes `git diff --check`.
 
 The build's temporary prerendering server stopped when the build finished.

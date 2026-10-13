@@ -124,15 +124,49 @@ const CompactEventScore = ({ event }: { event: StrengthRegionGroup["events"][num
   )
 }
 
-const AVAILABLE_REGION_MAPS = new Set(["03", "4B", "07", "09", "BARMM"])
+const AVAILABLE_REGION_MAPS = new Set([
+  "NCR",
+  "CAR",
+  "01",
+  "02",
+  "03",
+  "4A",
+  "4B",
+  "05",
+  "06",
+  "07",
+  "08",
+  "09",
+  "10",
+  "11",
+  "12",
+  "13",
+  "18",
+  "BARMM",
+])
 
-const RegionMapPlaceholder = ({ regionId, regionName, zone = "unknown" }: { regionId: string; regionName: string; zone?: string }) => {
+const RegionMapPlaceholder = ({
+  regionId,
+  regionName,
+  zone = "unknown",
+  compact = false,
+}: {
+  regionId: string
+  regionName: string
+  zone?: string
+  compact?: boolean
+}) => {
   const hasMap = AVAILABLE_REGION_MAPS.has(regionId)
   return (
     <div
-      className={`region-card-map-placeholder ${hasMap ? "has-map" : ""}`}
+      className={`region-card-map-placeholder ${hasMap ? "has-map" : ""}${compact ? " compact" : ""}`}
+      aria-hidden={compact || undefined}
       title={
-        hasMap ? `${regionName} map` : `${regionName} map icon placeholder`
+        compact
+          ? undefined
+          : hasMap
+            ? `${regionName} map`
+            : `${regionName} map icon placeholder`
       }
       style={
         hasMap
@@ -252,16 +286,27 @@ export function StrengthResults({
         <tbody>
           {rows.map(row => {
             const id = byRegion ? row.event_id : row.region_id
+            const region = !byRegion && row.region_id ? findRegion(row.region_id) : undefined
             const eventCoverage = byRegion && row.event_id ? coverage?.[row.event_id] : undefined
             return (
               <tr key={id}>
                 <td className="place-cell">
                   <span>{row.placement}</span>
                 </td>
-                <th scope="row">
+                <th scope="row" className={byRegion ? undefined : "strength-region-cell"}>
                   <span className="strength-name">
                     {byRegion && <img src={`/images/${row.event_id}.svg`} alt="" aria-hidden="true" fetchPriority="low" />}
-                    {byRegion ? row.event_name : <RegionTag regionId={row.region_id} regionName={row.region_name} variant="detailed" />}
+                    {byRegion ? row.event_name : (
+                      <>
+                        <RegionMapPlaceholder
+                          regionId={row.region_id || ""}
+                          regionName={region?.fullName || row.region_name || "Region"}
+                          zone={region?.zone}
+                          compact
+                        />
+                        <RegionTag regionId={row.region_id} regionName={row.region_name} variant="detailed" />
+                      </>
+                    )}
                   </span>
                 </th>
                 <td>{row.contributor_count} of 5</td>

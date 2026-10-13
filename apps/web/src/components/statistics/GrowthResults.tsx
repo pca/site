@@ -195,8 +195,11 @@ const valueFor = (series: Series, year: number, valueKey: ValueKey) => {
   return point ? Number(point[valueKey] || 0) : 0
 }
 
+const sharePercentage = (value: number | null, total: number) =>
+  total ? (Number(value) / total) * 100 : 0
+
 const formatShare = (value: number | null, total: number) =>
-  total ? `${((Number(value) / total) * 100).toFixed(1)}%` : "0.0%"
+  `${sharePercentage(value, total).toFixed(1)}%`
 
 const filterSeriesByYearRange = <T extends Series,>(series: T[], yearRange: YearRange): T[] => {
   if (yearRange === "all") return series
@@ -256,7 +259,9 @@ const LineChart = ({
   yearRange,
   onYearRangeChange,
   height = 290,
-}: { series: Series[]; valueKey?: ValueKey; title: string; height?: number } & RangeProps) => {
+  className = "",
+  evenYearSpacing = false,
+}: { series: Series[]; valueKey?: ValueKey; title: string; height?: number; className?: string; evenYearSpacing?: boolean } & RangeProps) => {
   const chartId = useId()
   const previousYearRange = useRef(yearRange)
   const width = 900
@@ -278,7 +283,9 @@ const LineChart = ({
   )
   const x = (year: number) =>
     margin.left +
-    ((year - years[0]) / Math.max(1, years[years.length - 1] - years[0])) *
+    (evenYearSpacing
+      ? years.indexOf(year) / Math.max(1, years.length - 1)
+      : (year - years[0]) / Math.max(1, years[years.length - 1] - years[0])) *
       (width - margin.left - margin.right)
   const y = (value: number) =>
     height -
@@ -315,7 +322,7 @@ const LineChart = ({
   }
 
   return (
-    <figure className="statistics-chart">
+    <figure className={`statistics-chart ${className}`.trim()}>
       <div className="statistics-chart-heading">
         <figcaption>{title}</figcaption>
         <YearRangeControl value={yearRange} onChange={onYearRangeChange} />
@@ -460,6 +467,25 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Se
         ]),
       )
     : {}
+  const shareRanges = secondaryKey
+    ? series.map(item => {
+        const columnShares = years.map(year => {
+          const primaryShare = sharePercentage(
+            valueFor(item, year, valueKey),
+            totalsByYear[year].primary,
+          )
+          const secondaryShare = sharePercentage(
+            valueFor(item, year, secondaryKey),
+            totalsByYear[year].secondary,
+          )
+          return (primaryShare + secondaryShare) / 2
+        })
+        return {
+          minimum: Math.min(...columnShares),
+          maximum: Math.max(...columnShares),
+        }
+      })
+    : []
   const minimumWidth = series[0]?.event_id
     ? Math.max(912, 90 + series.length * 125)
     : 912
@@ -502,12 +528,30 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Se
                 const secondary = secondaryKey
                   ? valueFor(item, year, secondaryKey)
                   : null
+                const primaryShare = secondaryKey
+                  ? sharePercentage(primary, totalsByYear[year].primary)
+                  : 0
+                const secondaryShare = secondaryKey
+                  ? sharePercentage(secondary, totalsByYear[year].secondary)
+                  : 0
+                const averageShare = (primaryShare + secondaryShare) / 2
+                const shareRange = secondaryKey ? shareRanges[index] : undefined
+                const relativeShare = !shareRange
+                  ? 0
+                  : shareRange.maximum === shareRange.minimum
+                    ? 0.5
+                    : (averageShare - shareRange.minimum) /
+                      (shareRange.maximum - shareRange.minimum)
+                const shareTint = 8 + relativeShare * 36
                 return (
                   <td key={item.region_id || item.event_id}>
                     {secondaryKey ? (
                       <span
                         className="history-value-pair"
-                        style={{ "--series-color": styles[index].color } as CSSProperties}
+                        style={{
+                          "--series-color": styles[index].color,
+                          "--share-tint": `${shareTint.toFixed(1)}%`,
+                        } as CSSProperties}
                       >
                         <strong className="history-share-value">
                           {formatShare(primary, totalsByYear[year].primary)} /{" "}
@@ -543,7 +587,9 @@ export const GrowthCoverage = ({ coverage }: { coverage?: Coverage }) => {
       of {formatNumber(total)} Philippine competitions ({percent}%) were
       automatically matched to a region.
       {unclassified > 0
-        ? ` ${formatNumber(unclassified)} remained unclassified and were excluded from regional totals.`
+        ? unclassified === 1
+          ? " The one unclassified competition was a multi-city event that could not be assigned to a single host region, so it was excluded from regional totals."
+          : ` ${formatNumber(unclassified)} remained unclassified and were excluded from regional totals.`
         : ""}
     </aside>
   )
@@ -638,7 +684,9 @@ export const PopularEventResults = ({ data, yearRange, onYearRangeChange }: { da
         title={`Most popular events in ${data.scope.name}`}
         yearRange={yearRange}
         onYearRangeChange={onYearRangeChange}
-        height={320}
+        height={500}
+        className="statistics-chart-popular-events"
+        evenYearSpacing
       />
       <p className="statistics-chart-note">
         The inactive 2021 season is omitted because it has no recorded
@@ -651,10 +699,11 @@ export const PopularEventResults = ({ data, yearRange, onYearRangeChange }: { da
         secondaryKey="unique_competitors"
       />
       <p className="statistics-footnote">
-        Table cells show participations and unique competitors, followed by each
-        event&apos;s percentage share of the year&apos;s summed event totals.
-        One competitor can appear in more than one event and may contribute
-        multiple participations by attending multiple competitions.
+        Table cells show each event&apos;s participation and competitor
+        percentage shares, followed by the exact counts. Darker backgrounds
+        indicate a higher share relative to the other years in the same event
+        column. One competitor can appear in more than one event and may
+        contribute multiple participations by attending multiple competitions.
       </p>
     </>
   )
