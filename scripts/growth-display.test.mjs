@@ -43,12 +43,13 @@ test("empty and single-year charts have a stable horizontal axis", () => {
   for (const count of [0, 1]) assert.equal(growthYearLabelLayout(count, 260).vertical, false)
 })
 
-test("plot margins are equal and adapt to the actual value-label width", () => {
+test("plot margins reserve value-label space without duplicating it on the right", () => {
   for (const labelWidth of [0, 7, 22.4, 32, 56.2]) {
     const margins = growthPlotMargins(labelWidth)
-    assert.equal(margins.left, margins.right)
+    assert.equal(margins.right, 16)
+    assert.ok(margins.right < margins.left)
     assert.ok(margins.left >= 24)
     assert.ok(margins.left >= labelWidth + 12)
   }
-  assert.deepEqual(growthPlotMargins(22), { left: 34, right: 34 })
+  assert.deepEqual(growthPlotMargins(22), { left: 34, right: 16 })
 })

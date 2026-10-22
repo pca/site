@@ -12,8 +12,7 @@ export function growthYearLabelLayout(yearCount: number, plotWidth: number) {
   return { vertical, bottomMargin: vertical ? 54 : 42, fontSize: vertical && gap < 12 ? 10 : 11 }
 }
 
-/** Balance the plot gutters while reserving only the space its value labels need. */
+/** Reserve the value-label gutter on the left, and only endpoint-label space on the right. */
 export function growthPlotMargins(valueLabelWidth: number) {
-  const side = Math.max(24, Math.ceil(valueLabelWidth) + 12)
-  return { left: side, right: side }
+  return { left: Math.max(24, Math.ceil(valueLabelWidth) + 12), right: 16 }
 }

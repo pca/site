@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { Link, useLocation } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 
 import { PCA_EMAIL, PCA_FACEBOOK_URL, PCA_INSTAGRAM_URL, SITE_TITLE } from "../lib/config"
@@ -17,6 +17,9 @@ export function Layout({ children, className }: { children: ReactNode; className
 }
 
 function Header() {
+  const { pathname } = useLocation()
+  const showGrowthStatistics = import.meta.env.DEV || pathname === "/growth-statistics" || pathname === "/growth-statistics/"
+
   return (
     <header>
       <div className="mx-auto bg-light">
@@ -41,7 +44,7 @@ function Header() {
             <Link to="/regional-statistics" activeProps={{ className: "active" }}>
               Regional Statistics
             </Link>
-            {import.meta.env.DEV && (
+            {showGrowthStatistics && (
               <Link to="/growth-statistics" activeProps={{ className: "active" }}>
                 Growth Statistics
               </Link>

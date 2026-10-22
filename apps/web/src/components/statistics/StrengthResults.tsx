@@ -1,5 +1,5 @@
 import { findRegion, formatNumber, type StrengthRegionGroup, type RankingFormat, type StrengthCoverage as Coverage, type StrengthSlot } from "@pca/shared"
-import { Fragment, useEffect, useRef, type CSSProperties } from "react"
+import { Fragment, useEffect, useRef, type CSSProperties, type MouseEvent } from "react"
 import { ZONE_COLORS } from "./regionColors"
 
 import { RegionTag } from "./RegionTag"
@@ -59,20 +59,16 @@ function ScoreDetails({ slots, format }: { slots: StrengthSlot[]; format?: Ranki
         <ol>
           {slots.map((slot, index) => (
             <li className={slot.is_penalty ? "penalty" : ""} key={`${slot.wca_id || "penalty"}-${index}`}>
-              <span className="slot-number">{index + 1}</span>
               <span className="slot-person">
-                {slot.is_penalty ? (
-                  <strong>Empty-slot penalty</strong>
-                ) : (
-                  <>
-                    <strong>{slot.name}</strong>
-                    {slot.wca_id && (
-                      <a href={`https://www.worldcubeassociation.org/persons/${slot.wca_id}`} target="_blank" rel="noreferrer" aria-label={`View WCA profile for ${slot.name || slot.wca_id} (${slot.wca_id})`}>
-                        <img src="/images/wca-logo.svg" alt="" aria-hidden="true" width={14} height={14} loading="lazy" />
-                        <span>{slot.wca_id}</span>
-                      </a>
-                    )}
-                  </>
+                <span className="slot-person-heading">
+                  <span className="slot-number" aria-hidden="true">{index + 1}.</span>
+                  <strong>{slot.is_penalty ? "Empty-slot penalty" : slot.name}</strong>
+                </span>
+                {!slot.is_penalty && slot.wca_id && (
+                  <a href={`https://www.worldcubeassociation.org/persons/${slot.wca_id}`} target="_blank" rel="noreferrer" aria-label={`View WCA profile for ${slot.name || slot.wca_id} (${slot.wca_id})`}>
+                    <img src="/images/wca-logo.svg" alt="" aria-hidden="true" width={14} height={14} loading="lazy" />
+                    <span>{slot.wca_id}</span>
+                  </a>
                 )}
               </span>
               <span className="slot-rank">
@@ -295,6 +291,14 @@ export interface StrengthTableRow {
   format?: RankingFormat
 }
 
+function toggleRowDetails(event: MouseEvent<HTMLTableRowElement>) {
+  const target = event.target
+  if (!(target instanceof Element) || target.closest("a, button, summary, input, select, textarea, [contenteditable]")) return
+  if (window.getSelection()?.toString()) return
+  const details = event.currentTarget.querySelector<HTMLDetailsElement>(".score-details")
+  if (details) details.open = !details.open
+}
+
 function ContributorCount({ count }: { count: number }) {
   return (
     <span className={count === 5 ? "strength-contributors complete" : "strength-contributors"}>
@@ -380,7 +384,7 @@ export function StrengthResults({
             const region = !byRegion && row.region_id ? findRegion(row.region_id) : undefined
             const eventCoverage = byRegion && row.event_id ? coverage?.[row.event_id] : undefined
             return (
-              <tr key={id}>
+              <tr key={id} onClick={toggleRowDetails}>
                 <td className="place-cell">
                   <span className={`statistics-rank-tag medal-${row.placement <= 3 ? row.placement : "other"}`}>{row.placement}</span>
                 </td>

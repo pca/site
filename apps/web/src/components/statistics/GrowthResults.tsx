@@ -1,4 +1,4 @@
-import { findRegion, formatNumber, shortRegionName, type GrowthCoverage as Coverage, type GrowthMetric, type GrowthSeries, type PopularEvents, type PopularEventSeries } from "@pca/shared"
+import { findRegion, formatNumber, type GrowthCoverage as Coverage, type GrowthMetric, type GrowthSeries, type PopularEvents, type PopularEventSeries } from "@pca/shared"
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react"
 
 import { getRegionColor } from "./regionColors"
@@ -9,6 +9,7 @@ import { growthPlotMargins, growthYearLabelLayout, omitGrowthDisplayYears } from
 type Point = { year: number; value?: number; participations?: number; unique_competitors?: number }
 type Series = { region_id?: string; region_name?: string; event_id?: string; event_name?: string; values: Point[] }
 type ValueKey = "value" | "participations" | "unique_competitors"
+type EventTableValueMode = "participation" | "competitors" | "both"
 type ChartStyle = { color: string; dash: string; groupId?: string }
 export type YearRange = "5" | "10" | "15" | "all"
 type RangeProps = { yearRange: YearRange; onYearRangeChange: (range: YearRange) => void }
@@ -92,11 +93,11 @@ const EVENT_STYLES = EVENT_GROUPS.reduce<Record<string, ChartStyle>>((styles, gr
 }, {})
 
 const REGION_LINE_PATTERNS = ["", "10 5", "3 4", "12 4 2 4", "7 3", "2 3"]
-const YEAR_RANGE_OPTIONS: { value: YearRange; label: string }[] = [
-  { value: "5", label: "5 years" },
-  { value: "10", label: "10 years" },
-  { value: "15", label: "15 years" },
-  { value: "all", label: "All years" },
+const YEAR_RANGE_OPTIONS: { value: YearRange; label: string; shortLabel: string }[] = [
+  { value: "5", label: "5 years", shortLabel: "5 yrs" },
+  { value: "10", label: "10 years", shortLabel: "10 yrs" },
+  { value: "15", label: "15 years", shortLabel: "15 yrs" },
+  { value: "all", label: "All years", shortLabel: "All yrs" },
 ]
 
 const rangeSize = (value: YearRange) =>
@@ -157,6 +158,35 @@ const ChartLineSwatch = ({ style }: { style: ChartStyle }) => (
   </svg>
 )
 
+const shortChartEventName = (name = "") => name
+  .replace(/ Cube\b/g, "")
+  .replace("One-Handed", "OH")
+  .replace("Fewest Moves", "FMC")
+  .replace("Blindfolded", "BLD")
+  .replace("Multi-Blind Old Style", "Multi BLD (old)")
+  .replace("Multi-Blind", "Multi BLD")
+  .replace("With Feet", "Feet")
+
+const EVENT_TABLE_NAMES: Record<string, string> = {
+  "333mbf": "Multi BLD",
+  "333mbo": "Multi BLD (old)",
+  fto: "FTO",
+}
+
+const ChartEventName = ({ eventId, name, tableHeader = false }: { eventId?: string; name?: string; tableHeader?: boolean }) => {
+  const tableName = tableHeader ? EVENT_TABLE_NAMES[eventId || ""] : undefined
+  return (
+    <span className="chart-event-name" title={name}>
+      <span className="sr-only">{name}</span>
+      <span aria-hidden="true">
+        <span className="event-chip-name-full">{tableName || name}</span>
+        <span className="event-chip-name-short">{tableName || shortChartEventName(name)}</span>
+        <span className="event-chip-name-mobile">{tableName || (eventId === "fto" ? "FTO" : shortChartEventName(name))}</span>
+      </span>
+    </span>
+  )
+}
+
 const EventChartLegend = ({ series, styles, selectedIds, onToggle, onSelectAll, onClearAll, onReset }: {
   series: Series[]
   styles: ChartStyle[]
@@ -212,11 +242,13 @@ const EventChartLegend = ({ series, styles, selectedIds, onToggle, onSelectAll, 
                     className="chart-region-chip"
                     key={item.event_id}
                     aria-pressed={selectedIds.includes(item.event_id!)}
+                    aria-label={item.event_name}
+                    title={item.event_name}
                     style={{ "--region-color": style.color } as CSSProperties}
                     onClick={() => onToggle([item.event_id!])}
                   >
                     <i aria-hidden="true" />
-                    {item.event_name}
+                    <ChartEventName eventId={item.event_id} name={item.event_name} />
                     <ChartLineSwatch style={style} />
                   </button>
                 ))}
@@ -234,6 +266,19 @@ const REGION_ZONES = [
   { id: "visayas", label: "Visayas" },
   { id: "mindanao", label: "Mindanao" },
 ] as const
+
+const REGION_CHIP_PAIRS = [["01", "CAR"], ["06", "18"], ["10", "12"]]
+
+function groupRegionChips(items: GrowthSeries[]) {
+  const pending = new Set(items.map(item => item.region_id))
+  return items.flatMap(item => {
+    if (!pending.has(item.region_id)) return []
+    const ids = REGION_CHIP_PAIRS.find(pair => pair.includes(item.region_id)) || [item.region_id]
+    const group = items.filter(candidate => pending.has(candidate.region_id) && ids.includes(candidate.region_id))
+    group.forEach(candidate => pending.delete(candidate.region_id))
+    return [group]
+  })
+}
 
 function RegionChartLegend({ series, selectedIds, totalRegions, omittedRegionCount, onToggle, onToggleGroup, onSelectAll, onClearAll, onReset }: {
   series: GrowthSeries[]
@@ -278,23 +323,32 @@ function RegionChartLegend({ series, selectedIds, totalRegions, omittedRegionCou
                 <small aria-hidden="true">{selectedCount}/{ids.length}</small>
               </button>
               <div>
-                {items.map(item => {
-                  const region = findRegion(item.region_id)
-                  return (
-                    <button
-                      type="button"
-                      className="chart-region-chip"
-                      key={item.region_id}
-                      aria-pressed={selectedIds.includes(item.region_id)}
-                      aria-label={region ? `${region.tag} · ${region.fullName}` : item.region_name}
-                      style={{ "--region-color": getRegionColor(item.region_id, zone.id) } as CSSProperties}
-                      onClick={() => onToggle(item.region_id)}
-                    >
-                      <i aria-hidden="true" />
-                      {region ? `${region.tag} · ${region.fullName}` : item.region_name}
-                    </button>
-                  )
-                })}
+                {groupRegionChips(items).map(group => (
+                  <span className={`chart-region-chip-group${group.length > 1 ? " chart-region-chip-pair" : ""}`} key={group[0].region_id}>
+                    {group.map(item => {
+                      const region = findRegion(item.region_id)
+                      return (
+                        <button
+                          type="button"
+                          className="chart-region-chip"
+                          key={item.region_id}
+                          aria-pressed={selectedIds.includes(item.region_id)}
+                          aria-label={region ? `${region.tag} · ${region.fullName}` : item.region_name}
+                          title={region ? `${region.tag} · ${region.fullName}` : item.region_name}
+                          style={{ "--region-color": getRegionColor(item.region_id, zone.id) } as CSSProperties}
+                          onClick={() => onToggle(item.region_id)}
+                        >
+                          <i aria-hidden="true" />
+                          <span aria-hidden="true">
+                            <span className="region-chip-name-full">{region ? `${region.tag} · ${region.fullName}` : item.region_name}</span>
+                            <span className="region-chip-name-short">{region?.shortName || item.region_name}</span>
+                            <span className="region-chip-name-compact">{region?.tableName || item.region_name}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </span>
+                ))}
               </div>
             </div>
           )
@@ -305,6 +359,7 @@ function RegionChartLegend({ series, selectedIds, totalRegions, omittedRegionCou
           {omittedRegionCount === 5 ? "Five" : omittedRegionCount} {omittedRegionCount === 1 ? "region omitted" : "regions omitted"} due to zero activity for the entire history.
         </p>
       )}
+      <p className="chart-region-note">2021 is omitted: no recorded competition activity.</p>
     </div>
   )
 }
@@ -357,11 +412,13 @@ const YearRangeControl = ({ value, onChange }: { value: YearRange; onChange: (ra
         <button
           type="button"
           className={value === option.value ? "active" : ""}
+          aria-label={option.label}
           aria-pressed={value === option.value}
           key={option.value}
           onClick={() => onChange(option.value)}
         >
-          {option.label}
+          <span className="chart-range-label-full" aria-hidden="true">{option.label}</span>
+          <span className="chart-range-label-short" aria-hidden="true">{option.shortLabel}</span>
         </button>
       ))}
     </div>
@@ -586,7 +643,7 @@ const LineChart = ({
   )
 }
 
-function HistoryTableScroll({ children, titleId, isRegional }: { children: ReactNode; titleId: string; isRegional: boolean }) {
+function HistoryTableScroll({ children, controls, titleId, isRegional }: { children: ReactNode; controls?: ReactNode; titleId: string; isRegional: boolean }) {
   const scrollArea = useRef<HTMLDivElement>(null)
   const topScroll = useRef<HTMLDivElement>(null)
   const scrollWidth = useRef<HTMLDivElement>(null)
@@ -604,7 +661,9 @@ function HistoryTableScroll({ children, titleId, isRegional }: { children: React
       top.scrollLeft = area.scrollLeft
     }
     const fromTop = () => { if (area.scrollLeft !== top.scrollLeft) area.scrollLeft = top.scrollLeft }
-    const fromTable = () => { if (top.scrollLeft !== area.scrollLeft) top.scrollLeft = area.scrollLeft }
+    const fromTable = () => {
+      if (top.scrollLeft !== area.scrollLeft) top.scrollLeft = area.scrollLeft
+    }
     const observer = new ResizeObserver(measure)
     observer.observe(area)
     observer.observe(table)
@@ -621,6 +680,7 @@ function HistoryTableScroll({ children, titleId, isRegional }: { children: React
   return (
     <div className="statistics-table-wrap history-table-wrap history-table-wrap--top-scroll">
       <h2 id={titleId} className="history-table-title">Exact values shown in the chart</h2>
+      {controls}
       <div ref={topScroll} className="history-table-top-scroll" hidden={!hasOverflow} tabIndex={0} role="region" aria-label={`Scroll ${isRegional ? "regional" : "event"} table horizontally`}>
         <div ref={scrollWidth} />
       </div>
@@ -633,6 +693,11 @@ function HistoryTableScroll({ children, titleId, isRegional }: { children: React
 
 const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, shareSeries = series }: { series: Series[]; valueKey?: ValueKey; secondaryKey?: ValueKey; seriesStyles?: ChartStyle[]; shareSeries?: Series[] }) => {
   const titleId = useId()
+  const valueDescriptionId = useId()
+  const [valueMode, setValueMode] = useState<EventTableValueMode>("both")
+  const displayedShare = (primary: number, secondary: number) => valueMode === "participation"
+    ? primary
+    : valueMode === "competitors" ? secondary : (primary + secondary) / 2
   const years = [
     ...new Set(series.flatMap(item => item.values.map(point => point.year))),
   ].sort()
@@ -665,7 +730,7 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, 
             valueFor(item, year, secondaryKey),
             totalsByYear[year].secondary,
           )
-          return (primaryShare + secondaryShare) / 2
+          return displayedShare(primaryShare, secondaryShare)
         })
         return {
           minimum: Math.min(...columnShares),
@@ -678,22 +743,56 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, 
     : 840
   const isRegional = Boolean(series[0]?.region_id)
   return (
-    <HistoryTableScroll titleId={titleId} isRegional={isRegional}>
+    <HistoryTableScroll
+      titleId={titleId}
+      isRegional={isRegional}
+      controls={secondaryKey && (
+        <div className="history-table-value-controls">
+          <fieldset>
+            <legend className="sr-only">Table values</legend>
+            <div>
+              {([
+                { id: "participation", label: "Participation" },
+                { id: "competitors", label: "Competitors" },
+                { id: "both", label: "Both" },
+              ] as const).map(mode => (
+                <button
+                  type="button"
+                  key={mode.id}
+                  aria-pressed={valueMode === mode.id}
+                  onClick={() => setValueMode(mode.id)}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <p id={valueDescriptionId} className="history-table-value-key history-value-pair" role="status">
+            <strong className="history-share-value">
+              {valueMode === "both" ? "Participation % / competitors %" : valueMode === "participation" ? "Participation %" : "Competitors %"}
+            </strong>{" "}
+            <small className="history-count-value">
+              {valueMode === "both" ? "Exact count / exact count" : "Exact count"}
+            </small>
+          </p>
+        </div>
+      )}
+    >
       <table
-        className={`statistics-table history-table${isRegional ? " history-table--regions" : ""}`}
+        className={`statistics-table history-table${isRegional ? " history-table--regions" : " history-table--events"}${secondaryKey && valueMode !== "both" ? " history-table--single-value" : ""}`}
         aria-labelledby={titleId}
+        aria-describedby={secondaryKey ? valueDescriptionId : undefined}
         style={{
           "--history-min-width": `${minimumWidth}px`,
           "--history-mobile-min-width": `${48 + series.length * 48}px`,
+          "--history-event-count": series.length,
         } as CSSProperties}
       >
-        {isRegional && (
-          <colgroup>
-            <col className="history-col-year" />
-            {series.map(item => <col className="history-col-region" key={item.region_id} />)}
-            <col className="history-col-spacer" />
-          </colgroup>
-        )}
+        <colgroup>
+          <col className="history-col-year" />
+          {series.map(item => <col className={isRegional ? "history-col-region" : "history-col-event"} key={item.region_id || item.event_id} />)}
+          {isRegional && <col className="history-col-spacer" />}
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Year</th>
@@ -709,10 +808,9 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, 
                 ) : (
                   <span className="statistics-event-series-label">
                     <ChartLineSwatch style={styles[index]} />
-                    {shortRegionName(item.event_name || "")}
+                    <ChartEventName eventId={item.event_id} name={item.event_name} tableHeader />
                   </span>
                 )}
-                {secondaryKey && <small>Participation / competitors</small>}
               </th>
             ))}
             {isRegional && <th className="history-table-spacer" scope="col" aria-hidden="true" />}
@@ -733,13 +831,13 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, 
                 const secondaryShare = secondaryKey
                   ? sharePercentage(secondary, totalsByYear[year].secondary)
                   : 0
-                const averageShare = (primaryShare + secondaryShare) / 2
+                const selectedShare = displayedShare(primaryShare, secondaryShare)
                 const shareRange = secondaryKey ? shareRanges[index] : undefined
                 const relativeShare = !shareRange
                   ? 0
                   : shareRange.maximum === shareRange.minimum
                     ? 0.5
-                    : (averageShare - shareRange.minimum) /
+                    : (selectedShare - shareRange.minimum) /
                       (shareRange.maximum - shareRange.minimum)
                 const shareTint = 8 + relativeShare * 36
                 return (
@@ -753,11 +851,14 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, 
                         } as CSSProperties}
                       >
                         <strong className="history-share-value">
-                          {formatShare(primary, totalsByYear[year].primary)} /{" "}
-                          {formatShare(secondary, totalsByYear[year].secondary)}
+                          {valueMode === "competitors"
+                            ? formatShare(secondary, totalsByYear[year].secondary)
+                            : formatShare(primary, totalsByYear[year].primary)}
+                          {valueMode === "both" && <> / {formatShare(secondary, totalsByYear[year].secondary)}</>}
                         </strong>
                         <small className="history-count-value">
-                          {formatNumber(primary)} / {formatNumber(secondary)}
+                          {formatNumber(valueMode === "competitors" ? secondary : primary)}
+                          {valueMode === "both" && <> / {formatNumber(secondary)}</>}
                         </small>
                       </span>
                     ) : (
@@ -936,7 +1037,6 @@ export const RegionalGrowthResults = ({
           onReset={() => setSelection(null)}
         />}
       />
-      <p className="statistics-chart-note">2021 is omitted: no recorded competition activity.</p>
       {chartSeries.length > 0 && <HistoryTable series={chartSeries} seriesStyles={selectedStyles} />}
       <LatestRegionalTable series={data.series} metricLabel={metricLabel} />
     </>
@@ -994,8 +1094,8 @@ export const PopularEventResults = ({ data, yearRange, onYearRangeChange }: { da
         shareSeries={rangedSeries}
       />}
       {chartSeries.length > 0 && <p className="statistics-footnote">
-        Table cells show each event&apos;s participation and competitor
-        percentage shares, followed by the exact counts. Darker backgrounds
+        Table cells show the selected percentage shares, with exact counts
+        underneath. Darker backgrounds
         indicate a higher share relative to the other years in the same event
         column. One competitor can appear in more than one event and may
         contribute multiple participations by attending multiple competitions.
