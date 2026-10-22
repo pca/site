@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useHydrated, useNavigate } from "@tanstack/react-router"
 
 import { Methodology, SnapshotNote, StatisticsPage, StatisticsStatus } from "../components/statistics/StatisticsPage"
-import { RegionCards, StrengthCoverage, StrengthResults } from "../components/statistics/StrengthResults"
+import { RegionCards, StrengthResults } from "../components/statistics/StrengthResults"
 import { prefetchForPrerender, regionalStatisticsQuery } from "../lib/queries"
 import { pageHead } from "../lib/seo"
 
@@ -65,17 +65,13 @@ function RegionalStatistics() {
     <StatisticsPage title="Regional Statistics" tabs={TABS} activeTab={activeTab} onTabChange={tab => update({ tab })}>
       <StatisticsStatus isLoading={query.isPending} error={query.error} onRetry={() => query.refetch()} />
       {data && !query.isError && (
-        <section className="statistics-results-introduction" aria-live="polite">
-          <Methodology>{data.methodology}</Methodology>
-          {"event" in data && <StrengthCoverage coverage={data.coverage} />}
-          <SnapshotNote snapshot={data.snapshot} showPreviewWarning showSource={false} />
-        </section>
+        <SnapshotNote snapshot={data.snapshot} showPreviewWarning showSource={false} />
       )}
 
       {activeTab === "event" && (
         <section className="statistics-controls statistics-controls-ranking-style" aria-label="Regional statistics event filter">
           <fieldset className="statistics-event-picker">
-            <legend>Event</legend>
+            <legend>Select an event</legend>
             <div className="events-menu flex flex-row flex-wrap">
               {ACTIVE_EVENTS.map(event => (
                 <button type="button" className={`event-icon mb-1 cursor-pointer ${selectedEvent === event.id ? "active" : ""}`} key={event.id} aria-label={`Select ${event.name}`} aria-pressed={selectedEvent === event.id} onClick={() => update({ event: event.id })}>
@@ -84,12 +80,6 @@ function RegionalStatistics() {
                 </button>
               ))}
             </div>
-            {selectedEventData && (
-              <div className="selected-event-name text-gray-600" aria-live="polite">
-                <img src={`/images/${selectedEventData.id}.svg`} alt="" aria-hidden="true" fetchPriority="low" />
-                <strong>{selectedEventData.name}</strong>
-              </div>
-            )}
           </fieldset>
         </section>
       )}
@@ -106,7 +96,8 @@ function RegionalStatistics() {
 
       {data && !query.isError && (
         <section aria-live="polite">
-          {"event" in data ? <StrengthResults rows={data.regions} kind="event" /> : <RegionCards regions={data.regions} />}
+          {"event" in data ? <StrengthResults rows={data.regions} kind="event" format={data.format} /> : <RegionCards regions={data.regions} />}
+          <Methodology>{data.methodology}</Methodology>
           <SnapshotNote snapshot={data.snapshot} className="statistics-snapshot-after-results" />
         </section>
       )}

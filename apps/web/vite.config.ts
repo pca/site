@@ -55,6 +55,8 @@ export default defineConfig({
         failOnError: true,
       },
       pages: [
+        // Keep this unlisted page reachable directly even though production navigation omits it.
+        { path: "/growth-statistics", prerender: { enabled: true }, sitemap: { exclude: true } },
         { path: "/404", prerender: { enabled: true, outputPath: "/404.html" }, sitemap: { exclude: true } },
         { path: "/maintenance", prerender: { enabled: true, outputPath: "/maintenance.html" }, sitemap: { exclude: true } },
       ],

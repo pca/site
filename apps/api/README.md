@@ -44,6 +44,18 @@ worker init-db --from FILE [--archive FILE]
   row ids, and the competition region assignments and the regional strength
   and growth rows (including their stored JSON and content hashes) are the
   same for the same export.
+- Regional strength ranks contributor tiers first (5 of 5 down to 0 of 5), then
+  lower scores within each tier. Ties require both the same contributor count
+  and score. After changing these rules, run `worker statistics` against the
+  existing database to rebuild stored placements before serving the new UI.
+- Best events within a region exclude events with no contributors. Events are
+  ordered by contributor count, then lower score, with official WCA event order
+  breaking ties. Regional placement compares regions within one event and does
+  not determine a region's best events.
+- Contributor details include their formatted single or average result from the
+  same WCA ranking used for the snapshot. Existing databases need one
+  `worker statistics` rebuild to populate these values; empty-slot penalties
+  never have a result value.
 
 ## Performance
 

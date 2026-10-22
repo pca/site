@@ -1,5 +1,5 @@
 import { findRegion, formatNumber, type StrengthRegionGroup, type RankingFormat, type StrengthCoverage as Coverage, type StrengthSlot } from "@pca/shared"
-import { Fragment, type CSSProperties } from "react"
+import { Fragment, useEffect, useRef, type CSSProperties } from "react"
 import { ZONE_COLORS } from "./regionColors"
 
 import { RegionTag } from "./RegionTag"
@@ -37,7 +37,7 @@ export function FormatToggle({
 
 const rankLabel = (slot: StrengthSlot) => (slot.national_rank == null ? "Not available" : formatNumber(slot.national_rank))
 
-function ScoreDetails({ slots }: { slots: StrengthSlot[] }) {
+function ScoreDetails({ slots, format }: { slots: StrengthSlot[]; format?: RankingFormat }) {
   return (
     <div className="score-breakdown">
       <div className="score-ranks" aria-label={`Five scoring ranks: ${slots.map(rankLabel).join(", ")}`}>
@@ -66,13 +66,23 @@ function ScoreDetails({ slots }: { slots: StrengthSlot[] }) {
                 ) : (
                   <>
                     <strong>{slot.name}</strong>
-                    <a href={`https://www.worldcubeassociation.org/persons/${slot.wca_id}`} target="_blank" rel="noreferrer">
-                      {slot.wca_id}
-                    </a>
+                    {slot.wca_id && (
+                      <a href={`https://www.worldcubeassociation.org/persons/${slot.wca_id}`} target="_blank" rel="noreferrer" aria-label={`View WCA profile for ${slot.name || slot.wca_id} (${slot.wca_id})`}>
+                        <img src="/images/wca-logo.svg" alt="" aria-hidden="true" width={14} height={14} loading="lazy" />
+                        <span>{slot.wca_id}</span>
+                      </a>
+                    )}
                   </>
                 )}
               </span>
               <span className="slot-rank">
+                {!slot.is_penalty && slot.result && (
+                  <>
+                    <strong>{slot.result}</strong>
+                    {format === "average" ? " average" : format === "single" ? " single" : ""}
+                    {" · "}
+                  </>
+                )}
                 National rank <strong>{formatNumber(slot.national_rank)}</strong>
               </span>
             </li>
@@ -83,7 +93,7 @@ function ScoreDetails({ slots }: { slots: StrengthSlot[] }) {
   )
 }
 
-const CompactEventScore = ({ event }: { event: StrengthRegionGroup["events"][number] }) => {
+const CompactEventScore = ({ event, rank }: { event: StrengthRegionGroup["events"][number]; rank: number }) => {
   const slots = event.slots || []
 
   return (
@@ -100,6 +110,10 @@ const CompactEventScore = ({ event }: { event: StrengthRegionGroup["events"][num
           {formatNumber(event.score)}
         </strong>
       </div>
+      <div className="region-card-event-ranking">
+        <span className={`statistics-rank-tag region-card-event-medal medal-${rank <= 3 ? rank : "other"}`} aria-label={`Number ${rank} event in this region`}>
+          #{rank}
+        </span>
       <div
         className="region-card-event-ranks"
         aria-label={`Scoring ranks: ${slots.map(rankLabel).join(", ")}`}
@@ -119,6 +133,7 @@ const CompactEventScore = ({ event }: { event: StrengthRegionGroup["events"][num
             )}
           </Fragment>
         ))}
+      </div>
       </div>
     </div>
   )
@@ -188,14 +203,48 @@ const RegionMapPlaceholder = ({
   )
 }
 
-export const RegionCards = ({ regions }: { regions: StrengthRegionGroup[] }) => (
+function ExpandedRegionEvents({ events, startRank, regionName }: { events: StrengthRegionGroup["events"]; startRank: number; regionName: string }) {
+  const listRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const firstFour = Array.from(list.children).slice(0, 4)
+    const measure = () => {
+      const heights = firstFour.map(item => item.getBoundingClientRect().height)
+      if (!heights.length || heights.some(height => height === 0)) return
+      const style = getComputedStyle(list)
+      const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+      list.style.setProperty("--region-expanded-height", `${heights.reduce((sum, height) => sum + height, 0) + padding}px`)
+    }
+    const observer = new ResizeObserver(measure)
+    firstFour.forEach(item => observer.observe(item))
+    measure()
+    return () => observer.disconnect()
+  }, [events])
+
+  return (
+    <div ref={listRef} className="region-card-events region-card-events-expanded" tabIndex={0} role="region" aria-label={`Additional events for ${regionName}`}>
+      {events.map((event, index) => <CompactEventScore event={event} rank={startRank + index} key={event.event_id} />)}
+    </div>
+  )
+}
+
+export const RegionCards = ({ regions }: { regions: StrengthRegionGroup[] }) => {
+  const cardRegions = (regions || []).filter(group => group?.region && Array.isArray(group.events))
+  const negrosIndex = cardRegions.findIndex(group => group.region.id === "18")
+  if (negrosIndex >= 0 && cardRegions.some(group => group.region.id === "08")) {
+    // Keep the Visayas together in this card view without changing shared region order.
+    const [negros] = cardRegions.splice(negrosIndex, 1)
+    const easternVisayasIndex = cardRegions.findIndex(group => group.region.id === "08")
+    cardRegions.splice(easternVisayasIndex + 1, 0, negros)
+  }
+  return (
   <div className="region-card-grid" aria-label="Best events by region">
-    {(regions || [])
-      .filter(group => group?.region && Array.isArray(group.events))
-      .map(group => {
+    {cardRegions.map(group => {
         const region = findRegion(group.region.id)
-        const visibleEvents = group.events.slice(0, 3)
-        const remainingEvents = group.events.slice(3)
+        const eligibleEvents = group.events.filter(event => event.contributor_count > 0)
+        const visibleEvents = eligibleEvents.slice(0, 3)
+        const remainingEvents = eligibleEvents.slice(3)
         return (
           <article className="region-card" key={group.region.id}>
             <header className="region-card-header">
@@ -208,32 +257,30 @@ export const RegionCards = ({ regions }: { regions: StrengthRegionGroup[] }) => 
                 regionId={group.region.id}
                 regionName={group.region.name}
                 variant="detailed"
+                abbreviateName
               />
             </header>
             <div className="region-card-events">
               {visibleEvents.length ? (
-                visibleEvents.map(event => (
-                  <CompactEventScore event={event} key={event.event_id} />
+                visibleEvents.map((event, index) => (
+                  <CompactEventScore event={event} rank={index + 1} key={event.event_id} />
                 ))
               ) : (
-                <p className="region-card-empty">No event scores available.</p>
+                <p className="region-card-empty">No ranked contributors in any event.</p>
               )}
             </div>
             {remainingEvents.length > 0 && (
               <details className="region-card-details">
                 <summary>More details</summary>
-                <div className="region-card-events region-card-events-expanded">
-                  {remainingEvents.map(event => (
-                    <CompactEventScore event={event} key={event.event_id} />
-                  ))}
-                </div>
+                <ExpandedRegionEvents events={remainingEvents} startRank={visibleEvents.length + 1} regionName={region?.fullName || group.region.name} />
               </details>
             )}
           </article>
         )
       })}
   </div>
-)
+  )
+}
 
 
 export interface StrengthTableRow {
@@ -245,6 +292,16 @@ export interface StrengthTableRow {
   region_name?: string
   event_id?: string
   event_name?: string
+  format?: RankingFormat
+}
+
+function ContributorCount({ count }: { count: number }) {
+  return (
+    <span className={count === 5 ? "strength-contributors complete" : "strength-contributors"}>
+      <span className="sr-only">{count} of 5 contributors</span>
+      <span aria-hidden="true">{count}/5<span className="strength-contributors-label"> contributors</span></span>
+    </span>
+  )
 }
 
 /** kind "event" lists regions for one event; "region" lists events for one region. */
@@ -252,24 +309,60 @@ export function StrengthResults({
   rows,
   kind,
   coverage,
+  format,
 }: {
   rows?: StrengthTableRow[]
   kind: "event" | "region"
   coverage?: Record<string, Coverage>
+  format?: RankingFormat
 }) {
+  const tableWrap = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const subjects = tableWrap.current?.querySelectorAll<HTMLElement>(".strength-region-cell .strength-subject-detail")
+    if (!subjects?.length) return
+    // CSS keeps every map the same square size at each breakpoint. Center the
+    // place badge on that map, never on wrapped text or expanded score details.
+    const alignPlacement = (subject: HTMLElement) => {
+      const row = subject.closest("tr")
+      const container = subject.parentElement
+      if (!row || !container) return
+      const icon = container.querySelector<HTMLElement>(".region-card-map-placeholder.compact")
+      const badge = row.querySelector<HTMLElement>(".place-cell .statistics-rank-tag")
+      if (icon && badge) {
+        const iconRect = icon.getBoundingClientRect()
+        const badgeRect = badge.getBoundingClientRect()
+        const currentOffset = parseFloat(getComputedStyle(badge).marginTop) || 0
+        const offset = currentOffset + iconRect.top + iconRect.height / 2 - badgeRect.top - badgeRect.height / 2
+        row.style.setProperty("--strength-place-offset", `${Math.max(0, offset)}px`)
+      }
+    }
+    const measureAll = () => subjects.forEach(alignPlacement)
+    const observer = new ResizeObserver(measureAll)
+    subjects.forEach(subject => {
+      observer.observe(subject)
+      const icon = subject.parentElement?.querySelector(".region-card-map-placeholder.compact")
+      if (icon) observer.observe(icon)
+    })
+    measureAll()
+    let active = true
+    document.fonts.ready.then(() => { if (active) measureAll() })
+    return () => {
+      active = false
+      observer.disconnect()
+    }
+  }, [rows, kind])
+
   if (!rows?.length) {
     return <p className="statistics-empty">No results are available for this selection.</p>
   }
   const byRegion = kind === "region"
   return (
-    <div className="statistics-table-wrap strength-table-wrap">
+    <div className="statistics-table-wrap strength-table-wrap" ref={tableWrap}>
       <table className={`statistics-table strength-table strength-table--${byRegion ? "events" : "regions"}`}>
         <caption className="sr-only">{byRegion ? "Regional strength by event" : "Regional strength by region"}</caption>
         <colgroup>
           <col className="strength-col-place" />
           <col className="strength-col-subject" />
-          <col className="strength-col-contributors" />
-          <col className="strength-col-score" />
           {byRegion && <col className="strength-col-coverage" />}
           <col className="strength-col-ranks" />
         </colgroup>
@@ -277,8 +370,6 @@ export function StrengthResults({
           <tr>
             <th scope="col">Place</th>
             <th scope="col">{byRegion ? "Event" : "Region"}</th>
-            <th scope="col">Contributors</th>
-            <th scope="col">Score</th>
             {byRegion && <th scope="col">Home-region coverage</th>}
             <th scope="col">Scoring ranks</th>
           </tr>
@@ -291,12 +382,20 @@ export function StrengthResults({
             return (
               <tr key={id}>
                 <td className="place-cell">
-                  <span>{row.placement}</span>
+                  <span className={`statistics-rank-tag medal-${row.placement <= 3 ? row.placement : "other"}`}>{row.placement}</span>
                 </td>
                 <th scope="row" className={byRegion ? undefined : "strength-region-cell"}>
                   <span className="strength-name">
                     {byRegion && <img src={`/images/${row.event_id}.svg`} alt="" aria-hidden="true" fetchPriority="low" />}
-                    {byRegion ? row.event_name : (
+                    {byRegion ? (
+                      <span className="strength-subject-detail">
+                        <span>{row.event_name}</span>
+                        <span className="strength-summary">
+                          <span>Score <strong>{formatNumber(row.score)}</strong></span>
+                          <ContributorCount count={row.contributor_count} />
+                        </span>
+                      </span>
+                    ) : (
                       <>
                         <RegionMapPlaceholder
                           regionId={row.region_id || ""}
@@ -304,13 +403,17 @@ export function StrengthResults({
                           zone={region?.zone}
                           compact
                         />
-                        <RegionTag regionId={row.region_id} regionName={row.region_name} variant="detailed" />
+                        <span className="strength-subject-detail">
+                          <RegionTag regionId={row.region_id} regionName={row.region_name} variant="detailed" responsiveName />
+                          <span className="strength-summary">
+                            <span>Score <strong>{formatNumber(row.score)}</strong></span>
+                            <ContributorCount count={row.contributor_count} />
+                          </span>
+                        </span>
                       </>
                     )}
                   </span>
                 </th>
-                <td>{row.contributor_count} of 5</td>
-                <td className="score-cell">{formatNumber(row.score)}</td>
                 {byRegion && (
                   <td>
                     {eventCoverage?.matched_home_region !== undefined && eventCoverage?.ranked_competitors !== undefined
@@ -319,7 +422,7 @@ export function StrengthResults({
                   </td>
                 )}
                 <td>
-                  <ScoreDetails slots={row.slots || []} />
+                  <ScoreDetails slots={row.slots || []} format={row.format ?? format} />
                 </td>
               </tr>
             )

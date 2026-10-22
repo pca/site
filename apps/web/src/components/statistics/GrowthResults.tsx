@@ -1,8 +1,10 @@
 import { findRegion, formatNumber, shortRegionName, type GrowthCoverage as Coverage, type GrowthMetric, type GrowthSeries, type PopularEvents, type PopularEventSeries } from "@pca/shared"
-import { useEffect, useId, useMemo, useRef, type CSSProperties } from "react"
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react"
 
 import { getRegionColor } from "./regionColors"
 import { RegionTag } from "./RegionTag"
+import { formatAverageChange, threeYearComparison } from "./growthComparison"
+import { growthPlotMargins, growthYearLabelLayout, omitGrowthDisplayYears } from "./growthDisplay"
 
 type Point = { year: number; value?: number; participations?: number; unique_competitors?: number }
 type Series = { region_id?: string; region_name?: string; event_id?: string; event_name?: string; values: Point[] }
@@ -20,6 +22,8 @@ const CHART_COLORS = [
   "#EAB308",
 ]
 
+const DEFAULT_HIDDEN_EVENTS = new Set(["magic", "mmagic", "333mbo", "333ft"])
+
 const EVENT_GROUPS = [
   {
     id: "cube",
@@ -28,16 +32,16 @@ const EVENT_GROUPS = [
     colors: ["#168BFF", "#4DA3FF", "#0070D9", "#005EB8", "#004B93", "#003A73"],
   },
   {
-    id: "blindfolded",
-    label: "Blindfolded",
-    eventIds: ["333bf", "444bf", "555bf", "333mbf", "333mbo"],
-    colors: ["#C4B5FD", "#A78BFA", "#8B5CF6", "#7C3AED", "#5B21B6"],
-  },
-  {
     id: "variants",
     label: "3×3 variants",
     eventIds: ["333oh", "333fm", "333ft"],
     colors: ["#2DD4BF", "#14B8A6", "#0F766E"],
+  },
+  {
+    id: "blindfolded",
+    label: "Blindfolded",
+    eventIds: ["333bf", "444bf", "555bf", "333mbf", "333mbo"],
+    colors: ["#C4B5FD", "#A78BFA", "#8B5CF6", "#7C3AED", "#5B21B6"],
   },
   {
     id: "other",
@@ -98,8 +102,6 @@ const YEAR_RANGE_OPTIONS: { value: YearRange; label: string }[] = [
 const rangeSize = (value: YearRange) =>
   value === "all" ? Number.POSITIVE_INFINITY : Number(value)
 
-const PANDEMIC_YEARS = new Set([2021])
-
 const chartStyles = (series: Series[]): ChartStyle[] => {
   const zoneCounts: Record<string, number> = {}
   return series.map((item, index) => {
@@ -155,7 +157,15 @@ const ChartLineSwatch = ({ style }: { style: ChartStyle }) => (
   </svg>
 )
 
-const EventChartLegend = ({ series, styles }: { series: Series[]; styles: ChartStyle[] }) => {
+const EventChartLegend = ({ series, styles, selectedIds, onToggle, onSelectAll, onClearAll, onReset }: {
+  series: Series[]
+  styles: ChartStyle[]
+  selectedIds: string[]
+  onToggle: (ids: string[]) => void
+  onSelectAll: () => void
+  onClearAll: () => void
+  onReset: () => void
+}) => {
   const groups = EVENT_GROUPS.map(group => ({
     ...group,
     items: series
@@ -169,23 +179,132 @@ const EventChartLegend = ({ series, styles }: { series: Series[]; styles: ChartS
   })).filter(group => group.items.length)
 
   return (
-    <div
-      className="chart-legend chart-event-legend"
-      aria-label="Chart legend grouped by event family"
-    >
-      {groups.map(group => (
-        <div className="chart-legend-group" key={group.id}>
-          <strong>{group.label}</strong>
-          <div>
-            {group.items.map(({ item, style }) => (
-              <span key={item.event_id}>
-                <ChartLineSwatch style={style} />
-                {shortRegionName(item.event_name || "")}
-              </span>
-            ))}
-          </div>
+    <div className="chart-region-controls">
+      <div className="chart-region-toolbar">
+        <p>Events shown <strong>{selectedIds.length}</strong><span> · Select to show or hide</span></p>
+        <div>
+          <button type="button" disabled={selectedIds.length === series.length} onClick={onSelectAll}>Select all</button>
+          <button type="button" disabled={!selectedIds.length} onClick={onClearAll}>Clear all</button>
+          <button type="button" onClick={onReset}>Reset</button>
         </div>
-      ))}
+      </div>
+      <div className="chart-region-legend chart-event-chip-legend" aria-label="Events grouped by event family">
+        {groups.map(group => {
+          const ids = group.items.map(({ item }) => item.event_id!)
+          const selectedCount = ids.filter(id => selectedIds.includes(id)).length
+          const allSelected = selectedCount === ids.length
+          return (
+            <div className="chart-legend-group" role="group" aria-label={group.label} key={group.id}>
+              <button
+                type="button"
+                className="chart-zone-toggle"
+                aria-pressed={allSelected ? true : selectedCount ? "mixed" : false}
+                aria-label={`${allSelected ? "Clear" : "Select"} all ${group.label.toLowerCase()}`}
+                onClick={() => onToggle(ids)}
+              >
+                <span>{group.label}</span>
+                <small aria-hidden="true">{selectedCount}/{ids.length}</small>
+              </button>
+              <div>
+                {group.items.map(({ item, style }) => (
+                  <button
+                    type="button"
+                    className="chart-region-chip"
+                    key={item.event_id}
+                    aria-pressed={selectedIds.includes(item.event_id!)}
+                    style={{ "--region-color": style.color } as CSSProperties}
+                    onClick={() => onToggle([item.event_id!])}
+                  >
+                    <i aria-hidden="true" />
+                    {item.event_name}
+                    <ChartLineSwatch style={style} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const REGION_ZONES = [
+  { id: "luzon", label: "Luzon" },
+  { id: "visayas", label: "Visayas" },
+  { id: "mindanao", label: "Mindanao" },
+] as const
+
+function RegionChartLegend({ series, selectedIds, totalRegions, omittedRegionCount, onToggle, onToggleGroup, onSelectAll, onClearAll, onReset }: {
+  series: GrowthSeries[]
+  selectedIds: string[]
+  totalRegions: number
+  omittedRegionCount: number
+  onToggle: (id: string) => void
+  onToggleGroup: (ids: string[]) => void
+  onSelectAll: () => void
+  onClearAll: () => void
+  onReset: () => void
+}) {
+  return (
+    <div className="chart-region-controls">
+      <div className="chart-region-toolbar">
+        <p>Regions shown <strong>{selectedIds.length}</strong><span> · Select to show or hide</span></p>
+        <div>
+          <button type="button" disabled={selectedIds.length === totalRegions} onClick={onSelectAll}>Select all</button>
+          <button type="button" disabled={!selectedIds.length} onClick={onClearAll}>Clear all</button>
+          <button type="button" onClick={onReset}>Reset</button>
+        </div>
+      </div>
+      <div className="chart-region-legend" aria-label="Regions grouped by zone">
+        {REGION_ZONES.map(zone => {
+          const items = series.filter(item => findRegion(item.region_id)?.zone === zone.id)
+          if (!items.length) return null
+          const ids = items.map(item => item.region_id)
+          const selectedCount = ids.filter(id => selectedIds.includes(id)).length
+          const allSelected = selectedCount === ids.length
+          const action = allSelected ? "Clear" : "Select"
+          return (
+            <div className="chart-legend-group" role="group" aria-label={zone.label} key={zone.id}>
+              <button
+                type="button"
+                className="chart-zone-toggle"
+                aria-pressed={allSelected ? true : selectedCount ? "mixed" : false}
+                aria-label={`${action} all shown ${zone.label} regions`}
+                title={`${action} the ${ids.length} visible ${zone.label} regions`}
+                onClick={() => onToggleGroup(ids)}
+              >
+                <span>{zone.label}</span>
+                <small aria-hidden="true">{selectedCount}/{ids.length}</small>
+              </button>
+              <div>
+                {items.map(item => {
+                  const region = findRegion(item.region_id)
+                  return (
+                    <button
+                      type="button"
+                      className="chart-region-chip"
+                      key={item.region_id}
+                      aria-pressed={selectedIds.includes(item.region_id)}
+                      aria-label={region ? `${region.tag} · ${region.fullName}` : item.region_name}
+                      style={{ "--region-color": getRegionColor(item.region_id, zone.id) } as CSSProperties}
+                      onClick={() => onToggle(item.region_id)}
+                    >
+                      <i aria-hidden="true" />
+                      {region ? `${region.tag} · ${region.fullName}` : item.region_name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {omittedRegionCount > 0 && (
+        <p className="chart-region-note">
+          {omittedRegionCount === 5 ? "Five" : omittedRegionCount} {omittedRegionCount === 1 ? "region omitted" : "regions omitted"} due to zero activity for the entire history.
+        </p>
+      )}
     </div>
   )
 }
@@ -219,10 +338,7 @@ const omitInactiveYears = <T extends Series,>(series: T[], valueKey: ValueKey): 
   const activeYears = new Set<number>()
   series.forEach(item => {
     item.values.forEach(point => {
-      if (
-        !PANDEMIC_YEARS.has(Number(point.year)) &&
-        Number(point[valueKey] || 0) > 0
-      ) {
+      if (Number(point[valueKey] || 0) > 0) {
         activeYears.add(point.year)
       }
     })
@@ -261,11 +377,14 @@ const LineChart = ({
   height = 290,
   className = "",
   evenYearSpacing = false,
-}: { series: Series[]; valueKey?: ValueKey; title: string; height?: number; className?: string; evenYearSpacing?: boolean } & RangeProps) => {
+  legend,
+  seriesStyles,
+}: { series: Series[]; valueKey?: ValueKey; title: string; height?: number; className?: string; evenYearSpacing?: boolean; legend?: ReactNode; seriesStyles?: ChartStyle[] } & RangeProps) => {
   const chartId = useId()
   const previousYearRange = useRef(yearRange)
-  const width = 900
-  const margin = { top: 16, right: 24, bottom: 42, left: 62 }
+  const chartContainer = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(900)
+  const [valueLabelWidth, setValueLabelWidth] = useState(32)
   const years = useMemo(
     () =>
       [
@@ -275,6 +394,9 @@ const LineChart = ({
       ].sort(),
     [series],
   )
+  const sideMargins = growthPlotMargins(valueLabelWidth)
+  const yearLabels = growthYearLabelLayout(years.length, width - sideMargins.left - sideMargins.right)
+  const margin = { top: 16, ...sideMargins, bottom: yearLabels.bottomMargin }
   const maxValue = Math.max(
     1,
     ...series.flatMap(item =>
@@ -291,17 +413,12 @@ const LineChart = ({
     height -
     margin.bottom -
     (value / maxValue) * (height - margin.top - margin.bottom)
-  const tickYears = years.filter((year, index) => {
-    if (index === 0 || index === years.length - 1) return true
-    if (years.length <= 10) return true
-    return Number(year) % 2 === 0
-  })
   const gridValues = [
     ...new Set(
       [0, 0.25, 0.5, 0.75, 1].map(ratio => Math.round(maxValue * ratio)),
     ),
   ]
-  const styles = chartStyles(series)
+  const styles = seriesStyles || chartStyles(series)
   const rangeAnimation =
     previousYearRange.current === yearRange
       ? ""
@@ -313,7 +430,31 @@ const LineChart = ({
     previousYearRange.current = yearRange
   }, [yearRange])
 
-  if (!series.length || !years.length) {
+  const hasChartData = series.length > 0 && years.length > 0
+  useEffect(() => {
+    const container = chartContainer.current
+    if (!container) return
+    let disposed = false
+    const measureValueLabels = () => {
+      if (disposed) return
+      const labels = container.querySelectorAll<SVGTextElement>(".chart-value-label")
+      setValueLabelWidth(Math.ceil(Math.max(0, ...Array.from(labels, label => label.getComputedTextLength()))))
+    }
+    measureValueLabels()
+    void document.fonts.ready.then(measureValueLabels)
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width > 0) {
+        setWidth(Math.round(entry.contentRect.width))
+      }
+    })
+    observer.observe(container)
+    return () => {
+      disposed = true
+      observer.disconnect()
+    }
+  }, [hasChartData, maxValue])
+
+  if (!hasChartData && !legend) {
     return (
       <p className="statistics-empty">
         There is no chart data for this selection.
@@ -327,22 +468,20 @@ const LineChart = ({
         <figcaption>{title}</figcaption>
         <YearRangeControl value={yearRange} onChange={onYearRangeChange} />
       </div>
-      {series[0]?.event_id ? (
-        <EventChartLegend series={series} styles={styles} />
-      ) : (
+      {legend || (
         <div className="chart-legend" aria-label="Chart legend">
           {series.map((item, index) => (
             <span key={item.region_id || item.event_id}>
-              <RegionTag
+              {item.event_id ? <><ChartLineSwatch style={styles[index]} />{item.event_name}</> : <RegionTag
                 regionId={item.region_id}
                 regionName={item.region_name}
                 color={styles[index].color}
-              />
+              />}
             </span>
           ))}
         </div>
       )}
-      <div className="chart-scroll">
+      {hasChartData ? <div className="chart-scroll" ref={chartContainer}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -377,8 +516,8 @@ const LineChart = ({
                   y2={y(value)}
                 />
                 <text
-                  className="chart-axis-label"
-                  x={margin.left - 10}
+                  className="chart-axis-label chart-value-label"
+                  x={margin.left - 6}
                   y={y(value) + 4}
                   textAnchor="end"
                 >
@@ -386,13 +525,15 @@ const LineChart = ({
                 </text>
               </g>
             ))}
-            {tickYears.map(year => (
+            {years.map(year => (
               <text
-                className="chart-axis-label"
+                className="chart-axis-label chart-year-label"
                 key={year}
                 x={x(year)}
-                y={height - 16}
-                textAnchor="middle"
+                y={yearLabels.vertical ? height - margin.bottom + 12 : height - 16}
+                textAnchor={yearLabels.vertical ? "end" : "middle"}
+                transform={yearLabels.vertical ? `rotate(-90 ${x(year)} ${height - margin.bottom + 12})` : undefined}
+                style={yearLabels.vertical ? { fontSize: yearLabels.fontSize } : undefined}
               >
                 {year}
               </text>
@@ -440,26 +581,72 @@ const LineChart = ({
             })}
           </g>
         </svg>
-      </div>
+      </div> : <p className="statistics-empty" role="status">Select {valueKey === "participations" ? "an event" : "a region"} above to show its trend and exact values.</p>}
     </figure>
   )
 }
 
-const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Series[]; valueKey?: ValueKey; secondaryKey?: ValueKey }) => {
+function HistoryTableScroll({ children, titleId, isRegional }: { children: ReactNode; titleId: string; isRegional: boolean }) {
+  const scrollArea = useRef<HTMLDivElement>(null)
+  const topScroll = useRef<HTMLDivElement>(null)
+  const scrollWidth = useRef<HTMLDivElement>(null)
+  const [hasOverflow, setHasOverflow] = useState(false)
+
+  useEffect(() => {
+    const area = scrollArea.current
+    const top = topScroll.current
+    const spacer = scrollWidth.current
+    const table = area?.querySelector("table")
+    if (!area || !top || !spacer || !table) return
+    const measure = () => {
+      spacer.style.width = `${area.scrollWidth}px`
+      setHasOverflow(area.scrollWidth > area.clientWidth + 1)
+      top.scrollLeft = area.scrollLeft
+    }
+    const fromTop = () => { if (area.scrollLeft !== top.scrollLeft) area.scrollLeft = top.scrollLeft }
+    const fromTable = () => { if (top.scrollLeft !== area.scrollLeft) top.scrollLeft = area.scrollLeft }
+    const observer = new ResizeObserver(measure)
+    observer.observe(area)
+    observer.observe(table)
+    top.addEventListener("scroll", fromTop, { passive: true })
+    area.addEventListener("scroll", fromTable, { passive: true })
+    measure()
+    return () => {
+      observer.disconnect()
+      top.removeEventListener("scroll", fromTop)
+      area.removeEventListener("scroll", fromTable)
+    }
+  }, [])
+
+  return (
+    <div className="statistics-table-wrap history-table-wrap history-table-wrap--top-scroll">
+      <h2 id={titleId} className="history-table-title">Exact values shown in the chart</h2>
+      <div ref={topScroll} className="history-table-top-scroll" hidden={!hasOverflow} tabIndex={0} role="region" aria-label={`Scroll ${isRegional ? "regional" : "event"} table horizontally`}>
+        <div ref={scrollWidth} />
+      </div>
+      <div ref={scrollArea} className="history-table-scroll" tabIndex={0} role="region" aria-label={isRegional ? "Regional history values" : "Event history values"}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+const HistoryTable = ({ series, valueKey = "value", secondaryKey, seriesStyles, shareSeries = series }: { series: Series[]; valueKey?: ValueKey; secondaryKey?: ValueKey; seriesStyles?: ChartStyle[]; shareSeries?: Series[] }) => {
+  const titleId = useId()
   const years = [
     ...new Set(series.flatMap(item => item.values.map(point => point.year))),
   ].sort()
-  const styles = chartStyles(series)
+  const styles = seriesStyles || chartStyles(series)
   const totalsByYear = secondaryKey
     ? Object.fromEntries(
         years.map(year => [
           year,
           {
-            primary: series.reduce(
+            primary: shareSeries.reduce(
               (sum, item) => sum + valueFor(item, year, valueKey),
               0,
             ),
-            secondary: series.reduce(
+            secondary: shareSeries.reduce(
               (sum, item) => sum + valueFor(item, year, secondaryKey),
               0,
             ),
@@ -488,14 +675,25 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Se
     : []
   const minimumWidth = series[0]?.event_id
     ? Math.max(912, 90 + series.length * 125)
-    : 912
+    : 840
+  const isRegional = Boolean(series[0]?.region_id)
   return (
-    <div className="statistics-table-wrap history-table-wrap">
+    <HistoryTableScroll titleId={titleId} isRegional={isRegional}>
       <table
-        className="statistics-table history-table"
-        style={{ minWidth: `${minimumWidth}px` }}
+        className={`statistics-table history-table${isRegional ? " history-table--regions" : ""}`}
+        aria-labelledby={titleId}
+        style={{
+          "--history-min-width": `${minimumWidth}px`,
+          "--history-mobile-min-width": `${48 + series.length * 48}px`,
+        } as CSSProperties}
       >
-        <caption>Exact values shown in the chart</caption>
+        {isRegional && (
+          <colgroup>
+            <col className="history-col-year" />
+            {series.map(item => <col className="history-col-region" key={item.region_id} />)}
+            <col className="history-col-spacer" />
+          </colgroup>
+        )}
         <thead>
           <tr>
             <th scope="col">Year</th>
@@ -517,6 +715,7 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Se
                 {secondaryKey && <small>Participation / competitors</small>}
               </th>
             ))}
+            {isRegional && <th className="history-table-spacer" scope="col" aria-hidden="true" />}
           </tr>
         </thead>
         <tbody>
@@ -567,11 +766,12 @@ const HistoryTable = ({ series, valueKey = "value", secondaryKey }: { series: Se
                   </td>
                 )
               })}
+              {isRegional && <td className="history-table-spacer" aria-hidden="true" />}
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </HistoryTableScroll>
   )
 }
 
@@ -582,15 +782,17 @@ export const GrowthCoverage = ({ coverage }: { coverage?: Coverage }) => {
   const total = assigned + unclassified
   const percent = total ? ((assigned / total) * 100).toFixed(1) : "0.0"
   return (
-    <aside className="statistics-coverage growth-coverage">
-      <strong>Competition-location coverage:</strong> {formatNumber(assigned)}{" "}
-      of {formatNumber(total)} Philippine competitions ({percent}%) were
-      automatically matched to a region.
-      {unclassified > 0
-        ? unclassified === 1
-          ? " The one unclassified competition was a multi-city event that could not be assigned to a single host region, so it was excluded from regional totals."
-          : ` ${formatNumber(unclassified)} remained unclassified and were excluded from regional totals.`
-        : ""}
+    <aside className="statistics-methodology growth-coverage" aria-label="Competition-location coverage">
+      <strong>Competition-location coverage</strong>
+      <p>
+        {formatNumber(assigned)} of {formatNumber(total)} Philippine competitions ({percent}%) were
+        automatically matched to a region.
+        {unclassified > 0
+          ? unclassified === 1
+            ? " The one unclassified competition was a multi-city event that could not be assigned to a single host region, so it was excluded from regional totals."
+            : ` ${formatNumber(unclassified)} remained unclassified and were excluded from regional totals.`
+          : ""}
+      </p>
     </aside>
   )
 }
@@ -600,41 +802,63 @@ function LatestRegionalTable({ series, metricLabel }: { series?: GrowthSeries[];
     .filter(item => item.region_id !== "national")
     .map(item => ({ ...item, latest: latestPoint(item) }))
     .sort((a, b) => (b.latest?.value || 0) - (a.latest?.value || 0))
+  const year = rows.find(item => item.latest)?.latest?.year
   return (
+    <>
     <div className="statistics-table-wrap latest-table-wrap">
       <table className="statistics-table latest-table">
-        <caption>Latest year by region</caption>
+        <caption>Current year by region</caption>
+        <colgroup>
+          <col className="latest-col-place" />
+          <col className="latest-col-region" />
+          <col className="latest-col-value" />
+          <col className="latest-col-change" />
+          <col className="latest-col-average-change" />
+          <col className="latest-col-spacer" />
+        </colgroup>
         <thead>
           <tr>
-            <th scope="col">Place</th>
+            <th scope="col" aria-label="Place" title="Place">#</th>
             <th scope="col">Region</th>
             <th scope="col">{metricLabel}</th>
             <th scope="col">Change</th>
+            <th scope="col" title="Change compared with the average of the previous three calendar years">Vs 3-year avg</th>
+            <th className="latest-table-spacer" scope="col" aria-hidden="true" />
           </tr>
         </thead>
         <tbody>
           {rows.map((item, index) => {
             const change = item.latest?.change
             const percent = item.latest?.percent_change
+            const comparison = threeYearComparison(item.values, item.latest)
             return (
               <tr key={item.region_id}>
                 <td className="place-cell">
-                  <span>{index + 1}</span>
+                  <span className={`statistics-rank-tag medal-${index < 3 ? index + 1 : "other"}`}>{index + 1}</span>
                 </td>
                 <th scope="row">
-                  <RegionTag regionId={item.region_id} regionName={item.region_name} />
+                  <RegionTag regionId={item.region_id} regionName={item.region_name} variant="table" />
                 </th>
                 <td className="score-cell">{formatNumber(item.latest?.value)}</td>
-                <td>
-                  {change == null ? "—" : `${change > 0 ? "+" : ""}${formatNumber(change)}`}
-                  {percent != null ? ` (${percent > 0 ? "+" : ""}${percent.toFixed(1)}%)` : ""}
+                <td className="latest-change-cell">
+                  <span>{change == null ? "—" : `${change > 0 ? "+" : ""}${formatNumber(change)}`}</span>
+                  {percent != null && <small>({percent > 0 ? "+" : ""}{percent.toFixed(1)}%)</small>}
                 </td>
+                <td className="latest-change-cell" title={comparison
+                  ? `Previous 3-year average: ${formatNumber(comparison.average)}${comparison.percent === null ? "; percentage unavailable because the average is zero" : ""}`
+                  : "Requires data for all three preceding calendar years"}>
+                  <span>{comparison ? formatAverageChange(comparison.change) : "—"}</span>
+                  {comparison?.percent != null && <small>({formatAverageChange(comparison.percent)}%)</small>}
+                </td>
+                <td className="latest-table-spacer" aria-hidden="true" />
               </tr>
             )
           })}
         </tbody>
       </table>
     </div>
+    <p className="latest-table-note">3-year average: {year ? `${year - 3}–${year - 1}` : "previous three calendar years"}. Current year may be incomplete.</p>
+    </>
   )
 }
 
@@ -644,38 +868,97 @@ export const RegionalGrowthResults = ({
   yearRange,
   onYearRangeChange,
 }: { data: GrowthMetric; metricLabel: string } & RangeProps) => {
-  const chartSeries = filterSeriesByYearRange(
-    topRegionalSeries(data.series),
-    yearRange,
-  )
+  const regionalSeries = (data.series || []).filter(item => item.region_id !== "national")
+  const allSeries = regionalSeries
+    .filter(item => item.values.some(point => point.value > 0))
+    .sort((left, right) => (latestPoint(right)?.value || 0) - (latestPoint(left)?.value || 0))
+  const defaultIds = allSeries.map(item => item.region_id)
+  const [selection, setSelection] = useState<string[] | null>(null)
+  const selectedIds = selection ?? defaultIds
+  const chartSeries = filterSeriesByYearRange(omitGrowthDisplayYears(allSeries), yearRange).filter(item => selectedIds.includes(item.region_id))
+  // Keep line patterns stable when another region is hidden or restored.
+  const allStyles = chartStyles(allSeries)
+  const selectedStyles = allStyles.filter((_, index) => selectedIds.includes(allSeries[index].region_id))
+  const legendSeries = allSeries
+  const toggleRegion = (id: string) => {
+    setSelection(current => {
+      const selected = current ?? defaultIds
+      return selected.includes(id) ? selected.filter(value => value !== id) : [...selected, id]
+    })
+  }
+  const toggleRegionGroup = (ids: string[]) => {
+    setSelection(current => {
+      const selected = current ?? defaultIds
+      return ids.every(id => selected.includes(id))
+        ? selected.filter(id => !ids.includes(id))
+        : [...new Set([...selected, ...ids])]
+    })
+  }
   const national = data.series?.find(item => item.region_id === "national")
   const nationalLatest = national ? latestPoint(national) : null
+  const nationalPrevious = nationalLatest
+    ? national?.values.find(point => point.year === nationalLatest.year - 1)
+    : null
   return (
     <>
       {nationalLatest && (
-        <div className="statistics-highlight">
-          <span>Nationwide in {nationalLatest.year}</span>
-          <strong>{formatNumber(nationalLatest.value)}</strong>
-          <small>{metricLabel.toLowerCase()}</small>
+        <div className="statistics-highlights">
+          {nationalPrevious && (
+            <div className="statistics-highlight statistics-highlight-previous">
+              <span>Nationwide in {nationalPrevious.year}</span>
+              <strong>{formatNumber(nationalPrevious.value)}</strong>
+              <small>{metricLabel.toLowerCase()}</small>
+            </div>
+          )}
+          <div className="statistics-highlight">
+            <span>Nationwide in {nationalLatest.year}</span>
+            <strong>{formatNumber(nationalLatest.value)}</strong>
+            <small>{metricLabel.toLowerCase()}</small>
+          </div>
         </div>
       )}
       <LineChart
         series={chartSeries}
-        title={`Top regions by ${metricLabel.toLowerCase()}`}
+        title={`Regions by ${metricLabel.toLowerCase()}`}
+        evenYearSpacing
         yearRange={yearRange}
         onYearRangeChange={onYearRangeChange}
+        seriesStyles={selectedStyles}
+        legend={<RegionChartLegend
+          series={legendSeries}
+          selectedIds={selectedIds}
+          totalRegions={allSeries.length}
+          omittedRegionCount={regionalSeries.length - allSeries.length}
+          onToggle={toggleRegion}
+          onToggleGroup={toggleRegionGroup}
+          onSelectAll={() => setSelection(allSeries.map(item => item.region_id))}
+          onClearAll={() => setSelection([])}
+          onReset={() => setSelection(null)}
+        />}
       />
-      <HistoryTable series={chartSeries} />
+      <p className="statistics-chart-note">2021 is omitted: no recorded competition activity.</p>
+      {chartSeries.length > 0 && <HistoryTable series={chartSeries} seriesStyles={selectedStyles} />}
       <LatestRegionalTable series={data.series} metricLabel={metricLabel} />
     </>
   )
 }
 
 export const PopularEventResults = ({ data, yearRange, onYearRangeChange }: { data: PopularEvents } & RangeProps) => {
-  const chartSeries = filterSeriesByYearRange(
-    topEventSeries(omitInactiveYears(data.events || [], "participations")),
-    yearRange,
-  )
+  const allSeries = topEventSeries(omitInactiveYears(omitGrowthDisplayYears(data.events || []), "participations"))
+  const allIds = allSeries.map(item => item.event_id)
+  const defaultIds = allIds.filter(id => !DEFAULT_HIDDEN_EVENTS.has(id))
+  const [selection, setSelection] = useState<string[] | null>(null)
+  const selectedIds = allIds.filter(id => (selection ?? defaultIds).includes(id))
+  const rangedSeries = filterSeriesByYearRange(allSeries, yearRange)
+  const chartSeries = rangedSeries.filter(item => selectedIds.includes(item.event_id))
+  const allStyles = chartStyles(allSeries)
+  const selectedStyles = allStyles.filter((_, index) => selectedIds.includes(allSeries[index].event_id))
+  const toggleEvents = (ids: string[]) => setSelection(current => {
+    const selected = current ?? defaultIds
+    return ids.every(id => selected.includes(id))
+      ? selected.filter(id => !ids.includes(id))
+      : [...new Set([...selected, ...ids])]
+  })
   return (
     <>
       <LineChart
@@ -687,24 +970,36 @@ export const PopularEventResults = ({ data, yearRange, onYearRangeChange }: { da
         height={500}
         className="statistics-chart-popular-events"
         evenYearSpacing
+        seriesStyles={selectedStyles}
+        legend={<EventChartLegend
+          series={allSeries}
+          styles={allStyles}
+          selectedIds={selectedIds}
+          onToggle={toggleEvents}
+          onSelectAll={() => setSelection(allIds)}
+          onClearAll={() => setSelection([])}
+          onReset={() => setSelection(null)}
+        />}
       />
       <p className="statistics-chart-note">
         The inactive 2021 season is omitted because it has no recorded
         competition activity. Event lines use small visual offsets to reveal
         equal and overlapping values; exact values are listed below.
       </p>
-      <HistoryTable
+      {chartSeries.length > 0 && <HistoryTable
         series={chartSeries}
         valueKey="participations"
         secondaryKey="unique_competitors"
-      />
-      <p className="statistics-footnote">
+        seriesStyles={selectedStyles}
+        shareSeries={rangedSeries}
+      />}
+      {chartSeries.length > 0 && <p className="statistics-footnote">
         Table cells show each event&apos;s participation and competitor
         percentage shares, followed by the exact counts. Darker backgrounds
         indicate a higher share relative to the other years in the same event
         column. One competitor can appear in more than one event and may
         contribute multiple participations by attending multiple competitions.
-      </p>
+      </p>}
     </>
   )
 }

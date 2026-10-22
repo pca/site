@@ -6,7 +6,7 @@
   "pcaSite": { "mount": "/", "dist": "dist/client", "spa": false },
   "scripts": {
     "dev": "vite dev --port 3000",
-    "build": "vite build && node ../../scripts/static-page.mjs dist/client/maintenance.html",
+    "build": "vite build && node ../../scripts/static-page.mjs dist/client/maintenance.html && node ../../scripts/filter-public-pages.mjs dist/client/pages.json",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

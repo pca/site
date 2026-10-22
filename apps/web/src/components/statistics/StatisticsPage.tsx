@@ -1,5 +1,5 @@
 import { ApiError, NetworkError, type Snapshot } from "@pca/shared"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { type ReactNode } from "react"
 
 import { Layout } from "../Layout"
 
@@ -10,6 +10,7 @@ export interface Tab<T extends string> {
 
 interface StatisticsPageProps<T extends string> {
   title: string
+  className?: string
   description?: string
   tabs: readonly Tab<T>[]
   activeTab: T
@@ -17,30 +18,10 @@ interface StatisticsPageProps<T extends string> {
   children: ReactNode
 }
 
-function ScrollableTabs<T extends string>({ title, tabs, activeTab, onTabChange }: Pick<StatisticsPageProps<T>, "title" | "tabs" | "activeTab" | "onTabChange">) {
-  const tabsRef = useRef<HTMLElement>(null)
-  const [overflowEdges, setOverflowEdges] = useState({ left: false, right: false })
-
-  useEffect(() => {
-    const element = tabsRef.current
-    if (!element) return
-    const updateEdges = () => {
-      const maximumScroll = element.scrollWidth - element.clientWidth
-      setOverflowEdges({ left: element.scrollLeft > 2, right: maximumScroll - element.scrollLeft > 2 })
-    }
-    element.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" })
-    updateEdges()
-    element.addEventListener("scroll", updateEdges, { passive: true })
-    window.addEventListener("resize", updateEdges)
-    return () => {
-      element.removeEventListener("scroll", updateEdges)
-      window.removeEventListener("resize", updateEdges)
-    }
-  }, [activeTab, tabs])
-
+function StatisticsTabs<T extends string>({ title, tabs, activeTab, onTabChange }: Pick<StatisticsPageProps<T>, "title" | "tabs" | "activeTab" | "onTabChange">) {
   return (
-    <div className={`statistics-tabs-shell${overflowEdges.left ? " has-left-overflow" : ""}${overflowEdges.right ? " has-right-overflow" : ""}`}>
-      <nav ref={tabsRef} className="statistics-tabs" aria-label={`${title} views`}>
+    <div className="statistics-tabs-shell">
+      <nav className="statistics-tabs" aria-label={`${title} views`}>
         {tabs.map(tab => (
           <button key={tab.id} type="button" className={activeTab === tab.id ? "active" : ""} aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => onTabChange(tab.id)}>
             {tab.label}
@@ -51,17 +32,17 @@ function ScrollableTabs<T extends string>({ title, tabs, activeTab, onTabChange 
   )
 }
 
-export function StatisticsPage<T extends string>({ title, description, tabs, activeTab, onTabChange, children }: StatisticsPageProps<T>) {
+export function StatisticsPage<T extends string>({ title, className = "", description, tabs, activeTab, onTabChange, children }: StatisticsPageProps<T>) {
   return (
     <Layout className="statistics-site">
-      <div className="statistics-page max-w-1340 mx-auto px-4 sm:px-6">
+      <div className={`statistics-page max-w-1340 mx-auto px-4 sm:px-6 ${className}`.trim()}>
         <header className="statistics-heading">
           <span className="statistics-eyebrow">Philippine cubing by region</span>
           <h1>{title}</h1>
           {description && <p>{description}</p>}
         </header>
 
-        <ScrollableTabs title={title} tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
+        <StatisticsTabs title={title} tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
 
         {children}
       </div>

@@ -31,13 +31,15 @@ export const Route = createFileRoute("/growth-statistics")({
     region: isRegionId(search.region) ? search.region : undefined,
   }),
   loader: ({ context }) => prefetchForPrerender(() => context.queryClient.ensureQueryData(growthQuery("new-attendees"))),
-  head: () =>
-    pageHead({
+  head: () => {
+    const head = pageHead({
       title: "Growth Statistics",
       description:
         "Follow how Philippine cubing participation has changed in every host region from the first local competition through the latest WCA export.",
       path: "/growth-statistics",
-    }),
+    })
+    return { ...head, meta: [...head.meta, { name: "robots", content: "noindex, nofollow, noarchive" }] }
+  },
   component: GrowthStatistics,
 })
 
@@ -69,7 +71,7 @@ function GrowthStatistics() {
   return (
     <StatisticsPage
       title="Growth Statistics"
-      description="Follow how Philippine cubing participation has changed in every host region from the first local competition through the latest WCA export."
+      className="statistics-page-growth"
       tabs={METRICS}
       activeTab={activeMetric}
       onTabChange={metric => update({ metric })}
@@ -93,13 +95,13 @@ function GrowthStatistics() {
       <StatisticsStatus isLoading={query.isPending} error={query.error} onRetry={() => query.refetch()} />
       {data && !query.isError && (
         <section aria-live="polite">
-          <Methodology>{data.methodology}</Methodology>
           {"events" in data ? (
-            <PopularEventResults data={data} yearRange={yearRange} onYearRangeChange={setYearRange} />
+            <PopularEventResults key={data.scope.id} data={data} yearRange={yearRange} onYearRangeChange={setYearRange} />
           ) : (
-            <RegionalGrowthResults data={data} metricLabel={definition.resultLabel} yearRange={yearRange} onYearRangeChange={setYearRange} />
+            <RegionalGrowthResults key={activeMetric} data={data} metricLabel={definition.resultLabel} yearRange={yearRange} onYearRangeChange={setYearRange} />
           )}
           <div className="growth-results-notes">
+            <Methodology>{data.methodology}</Methodology>
             <GrowthCoverage coverage={data.coverage} />
             <SnapshotNote snapshot={data.snapshot} />
           </div>

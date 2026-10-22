@@ -26,22 +26,27 @@ export function RankingNav({ event, format, region, onEventChange, onFormatChang
 
   return (
     <div className="rankings-nav mx-4 my-5 font-rubik">
-      <div className="events-menu flex flex-row flex-wrap">
-        {ACTIVE_EVENTS.map(item => (
-          <button
-            type="button"
-            className={`event-icon mb-1 ${event === item.id ? "active" : ""}`}
-            key={item.id}
-            aria-label={`Select ${item.name}`}
-            aria-pressed={event === item.id}
-            onClick={() => onEventChange(item.id)}
-          >
-            <img src={`/images/${item.id}.svg`} alt="" aria-hidden="true" width={28} height={28} fetchPriority="low" />
-            <span className="event-tooltip" role="tooltip">
-              {item.name}
-            </span>
-          </button>
-        ))}
+      <div className="rankings-event-picker">
+        <fieldset>
+          <legend>Select an event</legend>
+          <div className="events-menu flex flex-row flex-wrap">
+            {ACTIVE_EVENTS.map(item => (
+              <button
+                type="button"
+                className={`event-icon mb-1 ${event === item.id ? "active" : ""}`}
+                key={item.id}
+                aria-label={`Select ${item.name}`}
+                aria-pressed={event === item.id}
+                onClick={() => onEventChange(item.id)}
+              >
+                <img src={`/images/${item.id}.svg`} alt="" aria-hidden="true" width={28} height={28} fetchPriority="low" />
+                <span className="event-tooltip" role="tooltip">
+                  {item.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
       </div>
       {selected && (
         <div className="selected-event-name text-gray-600" aria-live="polite">
@@ -51,7 +56,7 @@ export function RankingNav({ event, format, region, onEventChange, onFormatChang
       )}
 
       <RegionSelect
-        className="mb-3"
+        className="rankings-region-select"
         label="Region"
         includeNational
         value={region ?? "PH"}

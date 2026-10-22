@@ -30,13 +30,32 @@
 @font-face {
   font-family: "Effra";
   src: url("./fonts/Effra_Std_Rg.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Effra";
+  src: url("./fonts/Effra_Std_Md.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Effra Medium";
   src: url("./fonts/Effra_Std_Md.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
   font-display: swap;
+}
+
+/* Keep Effra's actual outlines instead of browser-generated bold or italic. */
+:is(.font-effra, .font-effraMd, .site-nav a, .statistics-heading h1,
+  .statistics-eyebrow, .statistics-selection-title h2, .statistics-table caption,
+  .statistics-chart figcaption) {
+  font-synthesis: none;
 }
 
 @layer base {
@@ -44,6 +63,11 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+}
+
+.font-rubik :is(b, strong),
+.statistics-page :is(b, strong) {
+  font-weight: 600;
 }
 
 /* Header */
@@ -180,12 +204,47 @@
   visibility: visible;
 }
 
+.rankings-nav > .rankings-event-picker {
+  background: var(--stats-soft);
+  border: 1px solid #ededed;
+  border-radius: 14px;
+  margin-bottom: 7px;
+  padding: 8px 10px;
+
+  fieldset {
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  legend {
+    color: #767676;
+    font-size: 0.7rem;
+    margin: 0 0 8px;
+    padding: 0;
+    transform: translateY(4px);
+  }
+
+  .events-menu {
+    row-gap: 4px;
+  }
+
+  .event-icon {
+    margin-bottom: 0;
+  }
+}
+
+.rankings-region-select {
+  margin: 4px 0 16px;
+}
+
 .selected-event-name {
   align-items: center;
   display: none;
   font-size: 1rem;
   gap: 6px;
-  margin: 2px 0 12px;
+  margin: 12px 0 10px;
 
   img {
     height: 24px;
@@ -222,6 +281,10 @@
 
 table.rankings-list {
   white-space: nowrap;
+
+  th {
+    font-weight: 600;
+  }
 
   thead tr {
     background-color: #fff;

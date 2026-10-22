@@ -25,14 +25,17 @@ const (
 
 var officialSingleEvents = []string{"333bf", "444bf", "555bf", "333mbf"}
 
-const regionalEventMethodology = "Each region uses its five best national ranks for this event. Empty slots " +
-	"use the worst national rank in the complete WCA export. Lower scores are " +
-	"better, and equal scores use standard competition ranking."
+const regionalOfficialResultTypes = "Each event uses its official WCA result type: averages for standard events " +
+	"and Fewest Moves, and singles for blindfolded events and Multi-Blind."
 
-const regionalRegionMethodology = "Each event uses its official WCA result type: averages for standard events " +
-	"and Fewest Moves, and singles for blindfolded events and Multi-Blind. Every " +
-	"event uses the same five-slot regional score. Events are ordered by the " +
-	"region's placement, then official WCA event order."
+const regionalEventMethodology = "Each region uses its five best national ranks for this event. Empty slots " +
+	"use the worst national rank in the complete WCA export. Regions with more contributors rank first: " +
+	"5 of 5, then 4 of 5, and so on. Within each tier, lower scores are better; equal scores share a place. " +
+	regionalOfficialResultTypes
+
+const regionalRegionMethodology = regionalOfficialResultTypes + " Every " +
+	"event uses the same five-slot regional score. Events with no contributors are excluded. " +
+	"Events are ordered by contributor count (most first), then score (lowest first). Equal scores use official WCA event order."
 
 var growthMethodology = map[string]string{
 	metricNewAttendees: "A Filipino competitor counts in the year and host region of their " +
@@ -201,6 +204,24 @@ type eventStrength struct {
 	Slots            json.RawMessage `json:"slots"`
 }
 
+// Region event queries use official event order. Preserve that order when
+// contributor counts and scores tie; placement compares regions, not events.
+func eligibleRegionEvents(events []eventStrength) []eventStrength {
+	eligible := make([]eventStrength, 0, len(events))
+	for _, event := range events {
+		if event.ContributorCount > 0 {
+			eligible = append(eligible, event)
+		}
+	}
+	sort.SliceStable(eligible, func(i, j int) bool {
+		if eligible[i].ContributorCount != eligible[j].ContributorCount {
+			return eligible[i].ContributorCount > eligible[j].ContributorCount
+		}
+		return eligible[i].Score < eligible[j].Score
+	})
+	return eligible
+}
+
 func normalizedSlots(raw string) json.RawMessage {
 	out, err := jsonx.Normalize([]byte(raw))
 	if err != nil {
@@ -291,7 +312,7 @@ func (s *Server) handleStrengthByRegion(w http.ResponseWriter, r *http.Request) 
 			rows, err := s.db.Read.QueryContext(r.Context(), `SELECT k.event_id, e.name, k.rank_type, k.placement, k.score,
 				k.contributor_count, k.slots FROM api_regionalstrengthrecord k JOIN wca_event e ON e.id = k.event_id
 				WHERE k.snapshot_id = ? AND k.region_code = ? AND k.rank_type = ?
-				ORDER BY k.placement, e.rank, e.name, k.event_id`, snap.ID, regionID, rt)
+				ORDER BY e.rank, e.name, k.event_id`, snap.ID, regionID, rt)
 			if err != nil {
 				return nil, err
 			}
@@ -309,6 +330,7 @@ func (s *Server) handleStrengthByRegion(w http.ResponseWriter, r *http.Request) 
 			if err := rows.Err(); err != nil {
 				return nil, err
 			}
+			events = eligibleRegionEvents(events)
 			if len(events) == 0 {
 				return nil, notFound("No event strengths exist for this region and format.")
 			}
@@ -356,7 +378,7 @@ func (s *Server) handleStrengthRegions(w http.ResponseWriter, r *http.Request) {
 			rows, err := s.db.Read.QueryContext(r.Context(), `SELECT k.region_code, k.event_id, e.name, k.rank_type,
 				k.placement, k.score, k.contributor_count, k.slots FROM api_regionalstrengthrecord k
 				JOIN wca_event e ON e.id = k.event_id WHERE k.snapshot_id = ? AND `+filter+`
-				ORDER BY k.region_code, k.placement, e.rank, e.name`, args...)
+				ORDER BY k.region_code, e.rank, e.name, k.event_id`, args...)
 			if err != nil {
 				return nil, err
 			}
@@ -380,10 +402,7 @@ func (s *Server) handleStrengthRegions(w http.ResponseWriter, r *http.Request) {
 			}
 			groups := make([]group, 0, len(regions.Regions))
 			for _, reg := range regions.Regions {
-				events := grouped[reg.ID]
-				if events == nil {
-					events = []eventStrength{}
-				}
+				events := eligibleRegionEvents(grouped[reg.ID])
 				groups = append(groups, group{namedID{reg.ID, reg.Name}, events})
 			}
 			return struct {

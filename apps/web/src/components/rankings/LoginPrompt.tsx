@@ -118,10 +118,10 @@ export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
               {userData.last_name || null}({userData.wca_id || null})!
               <LogOutButton onClick={logOut} />
             </h3>
-            <p className="mt-2 mb-1 font-bold text-sm leading-5">
+            <p className="mt-2 mb-1 font-semibold text-sm leading-5">
               Your current region: {userData.region ? userData.region : "No region yet"}
             </p>
-            <p className="mt-1 mb-3 font-bold text-sm leading-5">
+            <p className="mt-1 mb-3 font-semibold text-sm leading-5">
               Your region request's status: {requestStatus ? requestStatus : "No request yet"}
             </p>
           </>
@@ -282,7 +282,7 @@ function LoginPromptContainer({
     )
   }
   return (
-    <div className="login-prompt bg-yellow-100 font-rubik text-gray-600 mx-4 my-5 px-6 py-5 border-4 border-yellow">
+    <div className="login-prompt bg-white font-rubik text-gray-600 mx-4 my-5 px-6 py-5 border-4 border-yellow">
       <div className="-ml-4 -mt-4 relative flex justify-between items-center flex-wrap sm:flex-nowrap">
         <div className="ml-4 mt-4">
           <button type="button" className="absolute top-0 -right-3 text-2xl" aria-label="Hide regional settings" onClick={() => setHidden(true)}>

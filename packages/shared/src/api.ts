@@ -50,6 +50,8 @@ export interface StrengthSlot {
   wca_id: string | null
   name: string | null
   national_rank: number | null
+  /** Formatted result in the snapshot's single/average format; absent in older snapshots. */
+  result?: string | null
   is_penalty: boolean
 }
 

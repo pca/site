@@ -25,6 +25,7 @@ export const WCA_CLIENT_ID: string =
 export const GA_MEASUREMENT_ID: string = env.VITE_GA_MEASUREMENT_ID || ""
 
 export const PCA_FACEBOOK_URL = "https://www.facebook.com/groups/PINOYCUBERS"
+export const PCA_INSTAGRAM_URL = "https://www.instagram.com/theofficial_pca/?hl=en"
 export const PCA_EMAIL = "pcadevteam@gmail.com"
 
 /** Builds an API URL; during prerendering it targets PRERENDER_API_URL. */

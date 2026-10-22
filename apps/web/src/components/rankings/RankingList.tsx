@@ -9,7 +9,7 @@ function RegionTag({ region }: { region: string | null }) {
   const label = found?.tag ?? "?"
   return (
     <span
-      className={`inline-flex min-w-[2rem] items-center justify-center rounded px-1.5 py-0.5 text-xs font-bold text-white ${found ? ZONE_TAG_CLASS[found.zone] : "bg-gray-dark"}`}
+      className={`inline-flex min-w-[2rem] items-center justify-center rounded px-1.5 py-0.5 text-xs font-semibold text-white ${found ? ZONE_TAG_CLASS[found.zone] : "bg-gray-dark"}`}
       title={region ? `Region ${label}` : "Unknown region"}
     >
       {label}
@@ -35,7 +35,7 @@ export function RankingList({ isLoading, rankings, hasAttemptedLoad, showSolves 
       <div className="w-full">
         <table className="rankings-list font-rubik text-sm w-full" aria-label="Rankings List">
           <caption className="sr-only">Cubing Rankings</caption>
-          <thead className="font-bold text-left">
+          <thead className="font-semibold text-left">
             <tr>
               <th scope="col" className="pos px-3 py-1">
                 #
@@ -79,7 +79,7 @@ export function RankingList({ isLoading, rankings, hasAttemptedLoad, showSolves 
                       <RegionTag region={cuber.region} />
                     </td>
                     <td className="name px-3 py-1 text-gray-600">{cuber.person_name}</td>
-                    <td className="result px-3 py-1 font-black text-gray-600">{cuber.value}</td>
+                    <td className="result px-3 py-1 font-medium text-gray-600">{cuber.value}</td>
                     {showSolves && (
                       <td className="solves px-3 py-1 text-gray-600">
                         <span className="inline-flex gap-4">

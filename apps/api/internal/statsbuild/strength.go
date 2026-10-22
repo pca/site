@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/pca/backend/internal/regions"
+	"github.com/pca/backend/internal/wcaformat"
 )
 
 const (
@@ -25,17 +26,20 @@ type rankRow struct {
 	personID sql.NullString
 	name     sql.NullString
 	rank     int
+	best     sql.NullInt64
 }
 
 type rankedCompetitor struct {
 	wcaID, name, region string
 	rank                int
+	result              *string
 }
 
 type slot struct {
 	WCAID        *string `json:"wca_id"`
 	Name         *string `json:"name"`
 	NationalRank int     `json:"national_rank"`
+	Result       *string `json:"result"`
 	IsPenalty    bool    `json:"is_penalty"`
 }
 
@@ -87,7 +91,7 @@ func newHomeRegions(pairs [][2]string) homeRegions {
 
 // eventInputs mirrors load_event_strength_inputs for rows already ordered by
 // (country_rank, person_id).
-func eventInputs(rows []rankRow, home homeRegions) ([]rankedCompetitor, int, matchCoverage) {
+func eventInputs(rows []rankRow, home homeRegions, format string, average bool) ([]rankedCompetitor, int, matchCoverage) {
 	var cov matchCoverage
 	if len(rows) == 0 {
 		return nil, 0, cov
@@ -113,7 +117,11 @@ func eventInputs(rows []rankRow, home homeRegions) ([]rankedCompetitor, int, mat
 		if r.name.Valid && r.name.String != "" {
 			name = r.name.String
 		}
-		entries = append(entries, rankedCompetitor{wcaID: id, name: name, region: region, rank: r.rank})
+		var result *string
+		if r.best.Valid && r.best.Int64 > 0 {
+			result = wcaformat.Value(int(r.best.Int64), format, average)
+		}
+		entries = append(entries, rankedCompetitor{wcaID: id, name: name, region: region, rank: r.rank, result: result})
 		matched[id] = true
 	}
 	cov.RankedCompetitors = len(ids)
@@ -182,7 +190,7 @@ func calculateEventStrength(entries []rankedCompetitor, worst int) ([]regionStre
 		rs := regionStrength{region: reg.ID, contributors: len(list)}
 		for _, e := range list {
 			id, name := e.wcaID, e.name
-			rs.slots = append(rs.slots, slot{WCAID: &id, Name: &name, NationalRank: e.rank})
+			rs.slots = append(rs.slots, slot{WCAID: &id, Name: &name, NationalRank: e.rank, Result: e.result})
 		}
 		for len(rs.slots) < teamSize {
 			rs.slots = append(rs.slots, slot{NationalRank: worst, IsPenalty: true})
@@ -193,16 +201,16 @@ func calculateEventStrength(entries []rankedCompetitor, worst int) ([]regionStre
 		results = append(results, rs)
 	}
 	slices.SortStableFunc(results, func(a, b regionStrength) int {
-		return cmp.Or(cmp.Compare(a.score, b.score), cmp.Compare(a.region, b.region))
+		return cmp.Or(cmp.Compare(b.contributors, a.contributors), cmp.Compare(a.score, b.score), cmp.Compare(a.region, b.region))
 	})
-	prevScore, prevPlacement := -1, 0
+	prevScore, prevContributors, prevPlacement := -1, -1, 0
 	for i := range results {
 		placement := i + 1
-		if i > 0 && results[i].score == prevScore {
+		if i > 0 && results[i].contributors == prevContributors && results[i].score == prevScore {
 			placement = prevPlacement
 		}
 		results[i].placement = placement
-		prevScore, prevPlacement = results[i].score, placement
+		prevScore, prevContributors, prevPlacement = results[i].score, results[i].contributors, placement
 	}
 	return results, nil
 }

@@ -141,17 +141,17 @@ func prepare(ctx context.Context, rdb *sql.DB, in Input, logf func(string, ...an
 	}
 
 	type event struct {
-		id, name string
-		rank     int
+		id, name, format string
+		rank             int
 	}
 	var events []event
-	rows, err := conn.QueryContext(ctx, `SELECT id, name, rank FROM wca_event ORDER BY rank, name, id`)
+	rows, err := conn.QueryContext(ctx, `SELECT id, name, rank, format FROM wca_event ORDER BY rank, name, id`)
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		var e event
-		if err := rows.Scan(&e.id, &e.name, &e.rank); err != nil {
+		if err := rows.Scan(&e.id, &e.name, &e.rank, &e.format); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -184,7 +184,7 @@ func prepare(ctx context.Context, rdb *sql.DB, in Input, logf func(string, ...an
 	ranks := map[string]map[string][]rankRow{}
 	for _, rt := range rankTables {
 		byEvent := map[string][]rankRow{}
-		rows, err := conn.QueryContext(ctx, `SELECT r.event_id, r.person_id, p.name, r.country_rank FROM `+rt.table+` r
+		rows, err := conn.QueryContext(ctx, `SELECT r.event_id, r.person_id, p.name, r.country_rank, r.best FROM `+rt.table+` r
 			LEFT JOIN wca_person p ON p.id = r.person_id WHERE r.country_rank > 0 AND r.event_id IS NOT NULL
 			ORDER BY r.event_id, r.country_rank, r.person_id`)
 		if err != nil {
@@ -193,7 +193,7 @@ func prepare(ctx context.Context, rdb *sql.DB, in Input, logf func(string, ...an
 		for rows.Next() {
 			var eventID string
 			var r rankRow
-			if err := rows.Scan(&eventID, &r.personID, &r.name, &r.rank); err != nil {
+			if err := rows.Scan(&eventID, &r.personID, &r.name, &r.rank, &r.best); err != nil {
 				rows.Close()
 				return nil, err
 			}
@@ -213,7 +213,7 @@ func prepare(ctx context.Context, rdb *sql.DB, in Input, logf func(string, ...an
 			continue
 		}
 		for _, rt := range rankTables {
-			entries, worst, cov := eventInputs(ranks[rt.rankType][e.id], home)
+			entries, worst, cov := eventInputs(ranks[rt.rankType][e.id], home, e.format, rt.rankType == rankAverage)
 			strengthCoverage.Set(rt.rankType+":"+e.id, cov)
 			if worst == 0 {
 				continue
@@ -335,7 +335,7 @@ func hashOf(payload any) (string, error) {
 func strengthRecord(eventID, rankType string, r regionStrength) (record, error) {
 	slotMaps := make([]map[string]any, len(r.slots))
 	for i, s := range r.slots {
-		slotMaps[i] = map[string]any{"wca_id": s.WCAID, "name": s.Name, "national_rank": s.NationalRank, "is_penalty": s.IsPenalty}
+		slotMaps[i] = map[string]any{"wca_id": s.WCAID, "name": s.Name, "national_rank": s.NationalRank, "result": s.Result, "is_penalty": s.IsPenalty}
 	}
 	hash, err := hashOf(map[string]any{"score": r.score, "placement": r.placement,
 		"contributor_count": r.contributors, "slots": slotMaps})

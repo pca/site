@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 
-import { PCA_EMAIL, PCA_FACEBOOK_URL, SITE_TITLE } from "../lib/config"
-import { FacebookIcon, InstagramIcon, YouTubeIcon } from "./BrandIcons"
+import { PCA_EMAIL, PCA_FACEBOOK_URL, PCA_INSTAGRAM_URL, SITE_TITLE } from "../lib/config"
+import { FacebookIcon, InstagramIcon } from "./BrandIcons"
 
 export function Layout({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -73,12 +73,9 @@ function Footer() {
             <a href={PCA_FACEBOOK_URL} aria-label="PCA on Facebook" rel="noopener">
               <FacebookIcon />
             </a>
-            <span aria-hidden="true">
-              <YouTubeIcon />
-            </span>
-            <span aria-hidden="true">
+            <a href={PCA_INSTAGRAM_URL} aria-label="PCA on Instagram" rel="noopener">
               <InstagramIcon />
-            </span>
+            </a>
           </div>
         </div>
       </div>
