@@ -5,6 +5,11 @@
 **/.vinxi
 .git
 .env
+**/.env*
+**/AGENTS*.md
+**/.agents
+**/.codex
+**/.aws
 *.sqlite3*
 *.zip
 *.exe

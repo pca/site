@@ -4,6 +4,9 @@ import { useNavigate } from "@tanstack/react-router"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
 import { apiUrl, PCA_EMAIL, SITE_URL, WCA_CLIENT_ID, WCA_URL } from "../../lib/config"
+import { analytics } from "../../lib/analytics"
+import { useFeatureExposure } from "../../lib/useFeatureExposure"
+import { consumeFeedbackLogin, FEEDBACK_LOGIN_RETURN_KEY, wcaAuthorizeUrl } from "../../lib/feedback-login"
 import { LoadingSpinner } from "../LoadingSpinner"
 import { RegionSelect } from "./RegionSelect"
 
@@ -33,6 +36,7 @@ function useStoredToken() {
 export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
   const [token, setToken] = useStoredToken()
   const [origin, setOrigin] = useState(SITE_URL)
+  const [loginError, setLoginError] = useState(false)
   const navigate = useNavigate()
   const exchanged = useRef(false)
 
@@ -42,15 +46,29 @@ export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
   useEffect(() => {
     if (!code || exchanged.current) return
     exchanged.current = true
-    const clearCode = () =>
+    const clearCode = () => {
+      const returnTo = consumeFeedbackLogin(window.sessionStorage, window.location.origin)
+      if (returnTo) {
+        window.location.replace(returnTo)
+        return
+      }
       navigate({ to: "/regional-rankings", search: prev => ({ ...prev, code: undefined }), replace: true, resetScroll: false })
+    }
     if (localStorage.getItem(TOKEN_KEY)) {
       clearCode()
       return
     }
-    fetchJson<{ key: string }>(apiUrl("auth/login/wca/"), { method: "POST", json: { code } })
-      .then(res => setToken(res.key))
-      .catch(error => console.error("WCA login failed:", error))
+    fetchJson<{ key: string }>(apiUrl("auth/login/wca/"), { method: "POST", json: { code, callback_url: `${window.location.origin}/regional-rankings` } })
+      .then(res => {
+        setToken(res.key)
+        analytics.loginOutcome("wca_login_completed")
+      })
+      .catch(error => {
+        consumeFeedbackLogin(window.sessionStorage, window.location.origin)
+        setLoginError(true)
+        analytics.loginOutcome("wca_login_failed")
+        console.error("WCA login failed:", error)
+      })
       .finally(clearCode)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
@@ -76,6 +94,8 @@ export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
         headers: authHeaders(token!),
         json: { region: userRegion },
       }),
+    onSuccess: () => { analytics.track("region_request_submitted", {}) },
+    onError: () => { analytics.track("region_request_failed", {}) },
   })
 
   // Users who already have a region start with the prompt collapsed.
@@ -90,7 +110,7 @@ export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
   }
 
   const container = (children: ReactNode) => (
-    <LoginPromptContainer hidden={hidden} setHidden={setHidden}>
+    <LoginPromptContainer hidden={hidden} setHidden={setHidden} trackPrompt={!token}>
       {children}
     </LoginPromptContainer>
   )
@@ -175,9 +195,7 @@ export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
     )
   }
 
-  const authorizeUrl =
-    `${WCA_URL}/oauth/authorize/?client_id=${WCA_CLIENT_ID}` +
-    `&redirect_uri=${origin}/regional-rankings&response_type=code&scope=`
+  const authorizeUrl = wcaAuthorizeUrl(origin, WCA_URL, WCA_CLIENT_ID)
 
   return container(
     <>
@@ -193,12 +211,18 @@ export function LoginPrompt({ hidden, setHidden, code }: LoginPromptProps) {
             className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md bg-yellow hover:bg-yellow-400 focus:outline-none"
             href={authorizeUrl}
             rel="nofollow"
+            onClick={() => {
+              try { sessionStorage.removeItem(FEEDBACK_LOGIN_RETURN_KEY) } catch { /* Storage may be disabled. */ }
+              analytics.use("region_prompt", "login_started")
+              analytics.track("wca_login_started", {})
+            }}
           >
             <img alt="WCA Logo" className="h-5 mr-2" src="/images/wca-logo.svg" fetchPriority="low" />
             Login with WCA
           </a>
         </span>
       </div>
+      {loginError && <p className="mt-3 text-sm" role="alert">WCA sign-in could not be completed. Please try again. If it keeps failing, contact {PCA_EMAIL}.</p>}
     </>,
   )
 }
@@ -261,12 +285,15 @@ function LogOutButton({ onClick }: { onClick: () => void }) {
 function LoginPromptContainer({
   hidden,
   setHidden,
+  trackPrompt,
   children,
 }: {
   hidden: boolean
   setHidden: (hidden: boolean) => void
+  trackPrompt: boolean
   children: ReactNode
 }) {
+  const exposureRef = useFeatureExposure("region_prompt", trackPrompt && !hidden)
   if (hidden) {
     return (
       <button
@@ -282,7 +309,7 @@ function LoginPromptContainer({
     )
   }
   return (
-    <div className="login-prompt bg-white font-rubik text-gray-600 mx-4 my-5 px-6 py-5 border-4 border-yellow">
+    <div ref={exposureRef} className="login-prompt bg-white font-rubik text-gray-600 mx-4 my-5 px-6 py-5 border-4 border-yellow">
       <div className="-ml-4 -mt-4 relative flex justify-between items-center flex-wrap sm:flex-nowrap">
         <div className="ml-4 mt-4">
           <button type="button" className="absolute top-0 -right-3 text-2xl" aria-label="Hide regional settings" onClick={() => setHidden(true)}>

@@ -1,7 +1,8 @@
 import { Link, useLocation } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 
-import { PCA_EMAIL, PCA_FACEBOOK_URL, PCA_INSTAGRAM_URL, SITE_TITLE } from "../lib/config"
+import { PCA_FACEBOOK_URL, PCA_INSTAGRAM_URL, SITE_TITLE } from "../lib/config"
+import { FEEDBACK_ANCHOR, FEEDBACK_GROUP, FEEDBACK_OPEN_EVENT, FEEDBACK_SLOT } from "../lib/feedback-login"
 import { FacebookIcon, InstagramIcon } from "./BrandIcons"
 
 export function Layout({ children, className }: { children: ReactNode; className?: string }) {
@@ -58,12 +59,28 @@ function Header() {
 }
 
 function Footer() {
+  const { pathname } = useLocation()
+  const feedbackHref = /^\/regional-(rankings|statistics)\/?$/.test(pathname)
+    ? `#${FEEDBACK_ANCHOR}`
+    : `/regional-rankings#${FEEDBACK_ANCHOR}`
+
   return (
     <footer className="my-6">
       <div className="flex flex-col gap-3">
-        <p className="text-sm leading-5 mx-5">
-          See anything wrong? Any incorrect rankings? let us know at <strong>{PCA_EMAIL}</strong>.
-        </p>
+        <div id={FEEDBACK_GROUP} className="flex flex-col gap-3 scroll-my-4">
+          <p className="text-sm leading-5 mx-5">
+            See anything wrong? Incorrect rankings?{" "}
+            <a className="whitespace-nowrap underline underline-offset-4 hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-4" href={feedbackHref} aria-controls={feedbackHref.startsWith("#") ? FEEDBACK_ANCHOR : undefined} onClick={event => {
+              if (feedbackHref.startsWith("#") && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+                event.preventDefault()
+                window.dispatchEvent(new Event(FEEDBACK_OPEN_EVENT))
+              }
+            }}>
+              Submit feedback
+            </a>
+          </p>
+          <div id={FEEDBACK_SLOT} className="contents" />
+        </div>
         <div className="flex justify-between mx-auto px-5 w-full">
           <p className="font-effraMd">
             Made with{" "}

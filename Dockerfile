@@ -16,12 +16,18 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 ARG VITE_SITE_URL=""
 ARG VITE_WCA_CLIENT_ID=""
 ARG VITE_GA_MEASUREMENT_ID=""
+ARG VITE_ANALYTICS_ENABLED="0"
+ARG VITE_BETA_GA_MEASUREMENT_ID=""
+ARG VITE_BETA_ANALYTICS_ENABLED="0"
 # Comma-separated app directories to include, e.g. "admin" when the public
 # site is hosted elsewhere. Empty builds every app.
 ARG SITES=""
 ENV VITE_SITE_URL=$VITE_SITE_URL \
     VITE_WCA_CLIENT_ID=$VITE_WCA_CLIENT_ID \
     VITE_GA_MEASUREMENT_ID=$VITE_GA_MEASUREMENT_ID \
+    VITE_ANALYTICS_ENABLED=$VITE_ANALYTICS_ENABLED \
+    VITE_BETA_GA_MEASUREMENT_ID=$VITE_BETA_GA_MEASUREMENT_ID \
+    VITE_BETA_ANALYTICS_ENABLED=$VITE_BETA_ANALYTICS_ENABLED \
     SITES=$SITES
 RUN if [ -n "$SITES" ]; then \
       pnpm $(for s in $(echo "$SITES" | tr ',' ' '); do printf -- '--filter ./apps/%s ' "$s"; done) build && \

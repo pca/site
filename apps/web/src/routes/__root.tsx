@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 
-import { Analytics, analyticsScripts } from "../components/Analytics"
+import { Analytics } from "../components/Analytics"
 import { NotFound } from "../components/NotFound"
 import { SITE_DESCRIPTION, SITE_TITLE } from "../lib/config"
 import appCss from "../styles.css?url"
@@ -21,7 +21,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", href: "/pca-logo.png" },
       { rel: "apple-touch-icon", href: "/pca-logo.png" },
     ],
-    scripts: analyticsScripts(),
   }),
   shellComponent: RootDocument,
   component: RootComponent,

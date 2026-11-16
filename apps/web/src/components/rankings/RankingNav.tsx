@@ -1,5 +1,7 @@
 import { ACTIVE_EVENTS, findEvent, SINGLE_ONLY_EVENTS, type RankingFormat } from "@pca/shared"
 
+import { analytics } from "../../lib/analytics"
+import { useFeatureExposure } from "../../lib/useFeatureExposure"
 import { RegionSelect } from "./RegionSelect"
 
 interface RankingNavProps {
@@ -13,19 +15,33 @@ interface RankingNavProps {
 
 export function RankingNav({ event, format, region, onEventChange, onFormatChange, onRegionChange }: RankingNavProps) {
   const selected = findEvent(event)
+  const exposureRef = useFeatureExposure("rankings_filters")
+  const changeFilter = (filter: "event" | "format" | "region", value: string) => {
+    if (value === (filter === "event" ? event : filter === "format" ? format : region ?? "PH")) return
+    analytics.use("rankings_filters", filter === "event" ? "event_changed" : filter === "format" ? "format_changed" : "region_changed")
+    analytics.track("rankings_filter_changed", {
+      filter_name: filter,
+      event_id: filter === "event" ? value : event,
+      result_type: filter === "format" ? value as RankingFormat : filter === "event" && SINGLE_ONLY_EVENTS.has(value) ? "single" : format,
+      region_id: filter === "region" ? value : region ?? "PH",
+    })
+    if (filter === "event") onEventChange(value)
+    else if (filter === "format") onFormatChange(value as RankingFormat)
+    else onRegionChange(value === "PH" ? undefined : value)
+  }
   const formatButton = (value: RankingFormat, label: string, rounded: string) => (
     <button
       type="button"
       className={`px-5 py-2 ${rounded} transition-colors duration-300 ${format === value ? "bg-blue-dark" : "bg-blue"} hover:bg-blue-dark text-sm text-white`}
       aria-pressed={format === value}
-      onClick={() => onFormatChange(value)}
+      onClick={() => changeFilter("format", value)}
     >
       {label}
     </button>
   )
 
   return (
-    <div className="rankings-nav mx-4 my-5 font-rubik">
+    <div ref={exposureRef} className="rankings-nav mx-4 my-5 font-rubik">
       <div className="rankings-event-picker">
         <fieldset>
           <legend>Select an event</legend>
@@ -37,7 +53,7 @@ export function RankingNav({ event, format, region, onEventChange, onFormatChang
                 key={item.id}
                 aria-label={`Select ${item.name}`}
                 aria-pressed={event === item.id}
-                onClick={() => onEventChange(item.id)}
+                onClick={() => changeFilter("event", item.id)}
               >
                 <img src={`/images/${item.id}.svg`} alt="" aria-hidden="true" width={28} height={28} fetchPriority="low" />
                 <span className="event-tooltip" role="tooltip">
@@ -60,7 +76,7 @@ export function RankingNav({ event, format, region, onEventChange, onFormatChang
         label="Region"
         includeNational
         value={region ?? "PH"}
-        onChange={value => onRegionChange(value === "PH" ? undefined : value)}
+        onChange={value => changeFilter("region", value)}
       />
 
       {!SINGLE_ONLY_EVENTS.has(event) && (

@@ -1,7 +1,7 @@
 import { isActiveEventId, isRegionId, SINGLE_ONLY_EVENTS, type RankingFormat } from "@pca/shared"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useHydrated, useNavigate } from "@tanstack/react-router"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { Layout } from "../components/Layout"
 import { LoginPrompt } from "../components/rankings/LoginPrompt"
@@ -9,6 +9,8 @@ import { RankingList } from "../components/rankings/RankingList"
 import { RankingNav } from "../components/rankings/RankingNav"
 import { prefetchForPrerender, rankingsQuery } from "../lib/queries"
 import { pageHead } from "../lib/seo"
+import { analytics } from "../lib/analytics"
+import { FeedbackForm } from "../components/FeedbackForm"
 
 interface RankingsSearch {
   event?: string
@@ -51,6 +53,11 @@ function RegionalRankings() {
 
   const [hideLoginPrompt, setHideLoginPrompt] = useState(false)
   const rankings = useQuery(rankingsQuery(event, format, region))
+  useEffect(() => {
+    // Wait for URL hydration and successfully rendered results. A failed load
+    // or a default-only hydration pass is not a content impression.
+    if (hydrated && rankings.data && !rankings.isError && !rankings.isPlaceholderData) analytics.contentView({ content_page: "rankings", event_id: event, region_id: region ?? "PH", result_type: format })
+  }, [hydrated, rankings.data, rankings.isError, rankings.isPlaceholderData, event, format, region])
 
   const select = useCallback(
     (next: Partial<Pick<RankingsSearch, "event" | "format" | "region">>) => {
@@ -91,6 +98,7 @@ function RegionalRankings() {
             showSolves={format === "average"}
           />
         </div>
+        {hydrated&&!search.code&&<FeedbackForm context={{page:"rankings",event,region:region??"PH",format,view:"",snapshot:""}} rankingRows={rankings.data}/>}
       </div>
     </Layout>
   )

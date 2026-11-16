@@ -9,6 +9,12 @@
 [build.environment]
   NODE_VERSION = "24"
 
+# Public measurement identifier; only the production build receives it here.
+[context.production.environment]
+  VITE_GA_MEASUREMENT_ID = "G-EGQD2JBT77"
+  # Collection remains off unless VITE_ANALYTICS_ENABLED=1 is explicitly set
+  # in the deployment environment after privacy and overlapping-tag review.
+
 [[headers]]
   for = "/assets/*"
   [headers.values]

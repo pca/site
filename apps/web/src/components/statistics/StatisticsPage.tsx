@@ -1,6 +1,8 @@
 import { ApiError, NetworkError, type Snapshot } from "@pca/shared"
 import { type ReactNode } from "react"
 
+import { analytics } from "../../lib/analytics"
+import { useFeatureExposure } from "../../lib/useFeatureExposure"
 import { Layout } from "../Layout"
 
 export interface Tab<T extends string> {
@@ -19,11 +21,18 @@ interface StatisticsPageProps<T extends string> {
 }
 
 function StatisticsTabs<T extends string>({ title, tabs, activeTab, onTabChange }: Pick<StatisticsPageProps<T>, "title" | "tabs" | "activeTab" | "onTabChange">) {
+  const exposureRef = useFeatureExposure("statistics_tabs")
+  const selectTab = (tab: T) => {
+    if (tab === activeTab) return
+    analytics.use("statistics_tabs", "view_changed")
+    analytics.track("statistics_view_changed", { view_id: tab })
+    onTabChange(tab)
+  }
   return (
-    <div className="statistics-tabs-shell">
+    <div ref={exposureRef} className="statistics-tabs-shell">
       <nav className="statistics-tabs" aria-label={`${title} views`}>
         {tabs.map(tab => (
-          <button key={tab.id} type="button" className={activeTab === tab.id ? "active" : ""} aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => onTabChange(tab.id)}>
+          <button key={tab.id} type="button" className={activeTab === tab.id ? "active" : ""} aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => selectTab(tab.id)}>
             {tab.label}
           </button>
         ))}

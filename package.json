@@ -16,6 +16,8 @@
     "serve": "node scripts/dev.mjs serve",
     "db:setup": "node scripts/dev.mjs setup",
     "db:reset": "node scripts/dev.mjs reset",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test:analytics": "node scripts/verify-analytics.mjs --unit",
+    "verify:analytics": "node scripts/verify-analytics.mjs"
   }
 }

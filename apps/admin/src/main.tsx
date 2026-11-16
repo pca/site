@@ -5,8 +5,12 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { isUnauthorized } from "./lib/api"
+import { applyAdminTheme, getInitialAdminTheme } from "./lib/theme"
 import { routeTree } from "./routeTree.gen"
 import "./styles.css"
+import "./theme.css"
+
+applyAdminTheme(getInitialAdminTheme())
 
 // Any 401 means the session ended: forget it and let the guard redirect.
 const onError = (error: unknown) => {

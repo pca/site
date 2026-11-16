@@ -57,6 +57,8 @@ export default defineConfig({
       pages: [
         // Keep this unlisted page reachable directly even though production navigation omits it.
         { path: "/growth-statistics", prerender: { enabled: true }, sitemap: { exclude: true } },
+        // Reviewable prototypes, not production navigation or search landing pages.
+        ...["/insights", "/performance", "/region-pulse", "/competition-breakdown", "/milestones", "/competition-recap"].map(path => ({ path, prerender: { enabled: true, crawlLinks: false }, sitemap: { exclude: true } })),
         { path: "/404", prerender: { enabled: true, outputPath: "/404.html" }, sitemap: { exclude: true } },
         { path: "/maintenance", prerender: { enabled: true, outputPath: "/maintenance.html" }, sitemap: { exclude: true } },
       ],

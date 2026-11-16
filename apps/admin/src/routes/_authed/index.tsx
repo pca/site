@@ -26,6 +26,14 @@ function DashboardPage() {
 
       <MaintenanceCard />
 
+      <div className="card mb-6 flex flex-wrap items-center justify-between gap-4 px-4 py-4">
+        <div>
+          <p className="text-sm font-semibold">Analytics workspace</p>
+          <p className="mt-1 text-xs text-zinc-500">Pages, audience, acquisition, feature signals and release comparison. Live and sample sources stay separate.</p>
+        </div>
+        <Link to="/analytics-workbench/$section" params={{ section: "pages" }} search={{ mode: "sample", device: "all", days: 28 }} className="btn">Open Analytics →</Link>
+      </div>
+
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/requests" search={{ status: "p" }}>
           <Stat label="Pending requests" value={data.request_counts.pending} hint="Waiting for review" />

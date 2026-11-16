@@ -43,6 +43,9 @@ type Config struct {
 	AdminBootstrapPassword string
 	AdminSecureCookies     bool
 	AutoRebuildStatistics  bool
+	// Reporting credentials stay server-side. Neither is a web measurement ID.
+	GA4PropertyID         string
+	GA4ServiceAccountFile string
 
 	// RankingsRequireWCAAccount restricts regional/zonal membership to users
 	// linked to a WCA social account.
@@ -85,6 +88,8 @@ func Load() Config {
 		AdminBootstrapPassword: env("ADMIN_BOOTSTRAP_PASSWORD", ""),
 		AdminSecureCookies:     boolEnv("ADMIN_SECURE_COOKIES", false),
 		AutoRebuildStatistics:  boolEnv("AUTO_REBUILD_STATISTICS", true),
+		GA4PropertyID:          env("GA4_PROPERTY_ID", ""),
+		GA4ServiceAccountFile:  env("GA4_SERVICE_ACCOUNT_FILE", ""),
 
 		RankingsRequireWCAAccount: boolEnv("RANKINGS_REQUIRE_WCA_ACCOUNT", false),
 

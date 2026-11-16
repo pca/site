@@ -1,0 +1,14 @@
+# Optional reporting override. Does not activate public collection or grant GA4 access.
+# docker compose -f docker-compose.yml -f docker-compose.analytics.yml up -d --build
+services:
+  app:
+    environment:
+      GA4_PROPERTY_ID: ${GA4_PROPERTY_ID:?Set the numeric GA4 property ID}
+      GA4_SERVICE_ACCOUNT_FILE: /run/secrets/pca-ga4.json
+    volumes:
+      - type: bind
+        source: ${GA4_SERVICE_ACCOUNT_HOST_FILE:?Set the protected absolute credential-file path on the server}
+        target: /run/secrets/pca-ga4.json
+        read_only: true
+        bind:
+          create_host_path: false

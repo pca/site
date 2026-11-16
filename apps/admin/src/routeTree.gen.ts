@@ -12,12 +12,24 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedAnalyticsFeatureConceptRouteImport } from './routes/_authed/analytics-feature-concept'
 import { Route as AuthedBackupsRouteImport } from './routes/_authed/backups'
+import { Route as AuthedCampaignsRouteImport } from './routes/_authed/campaigns'
+import { Route as AuthedExperimentsRouteImport } from './routes/_authed/experiments'
+import { Route as AuthedPreviewLibraryRouteImport } from './routes/_authed/preview-library'
 import { Route as AuthedRequestsRouteImport } from './routes/_authed/requests'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedUxAnalyticsRouteImport } from './routes/_authed/ux-analytics'
+import { Route as AuthedAnalyticsWorkbenchIndexRouteImport } from './routes/_authed/analytics-workbench.index'
+import { Route as AuthedAnalyticsWorkbenchSectionRouteImport } from './routes/_authed/analytics-workbench.$section'
+import { Route as AuthedAnalyticsIndexRouteImport } from './routes/_authed/analytics.index'
+import { Route as AuthedAnalyticsSectionRouteImport } from './routes/_authed/analytics.$section'
 import { Route as AuthedJobsIndexRouteImport } from './routes/_authed/jobs/index'
 import { Route as AuthedJobsIdRouteImport } from './routes/_authed/jobs/$id'
 import { Route as AuthedUsersIndexRouteImport } from './routes/_authed/users/index'
 import { Route as AuthedUsersIdRouteImport } from './routes/_authed/users/$id'
+import { Route as AuthedUxExamplesIndexRouteImport } from './routes/_authed/ux-examples.index'
+import { Route as AuthedUxExamplesViewRouteImport } from './routes/_authed/ux-examples.$view'
 
 const AuthedRoute = AuthedRouteImport.update({
   id: '/_authed',
@@ -33,14 +45,67 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedAnalyticsFeatureConceptRoute =
+  AuthedAnalyticsFeatureConceptRouteImport.update({
+    id: '/analytics-feature-concept',
+    path: '/analytics-feature-concept',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedBackupsRoute = AuthedBackupsRouteImport.update({
   id: '/backups',
   path: '/backups',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedCampaignsRoute = AuthedCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedExperimentsRoute = AuthedExperimentsRouteImport.update({
+  id: '/experiments',
+  path: '/experiments',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedPreviewLibraryRoute = AuthedPreviewLibraryRouteImport.update({
+  id: '/preview-library',
+  path: '/preview-library',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedRequestsRoute = AuthedRequestsRouteImport.update({
   id: '/requests',
   path: '/requests',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedUxAnalyticsRoute = AuthedUxAnalyticsRouteImport.update({
+  id: '/ux-analytics',
+  path: '/ux-analytics',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAnalyticsWorkbenchIndexRoute =
+  AuthedAnalyticsWorkbenchIndexRouteImport.update({
+    id: '/analytics-workbench/',
+    path: '/analytics-workbench/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedAnalyticsWorkbenchSectionRoute =
+  AuthedAnalyticsWorkbenchSectionRouteImport.update({
+    id: '/analytics-workbench/$section',
+    path: '/analytics-workbench/$section',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedAnalyticsIndexRoute = AuthedAnalyticsIndexRouteImport.update({
+  id: '/analytics/',
+  path: '/analytics/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAnalyticsSectionRoute = AuthedAnalyticsSectionRouteImport.update({
+  id: '/analytics/$section',
+  path: '/analytics/$section',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedJobsIndexRoute = AuthedJobsIndexRouteImport.update({
@@ -63,71 +128,153 @@ const AuthedUsersIdRoute = AuthedUsersIdRouteImport.update({
   path: '/users/$id',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedUxExamplesIndexRoute = AuthedUxExamplesIndexRouteImport.update({
+  id: '/ux-examples/',
+  path: '/ux-examples/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedUxExamplesViewRoute = AuthedUxExamplesViewRouteImport.update({
+  id: '/ux-examples/$view',
+  path: '/ux-examples/$view',
+  getParentRoute: () => AuthedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof LoginRoute
+  '/analytics-feature-concept': typeof AuthedAnalyticsFeatureConceptRoute
   '/backups': typeof AuthedBackupsRoute
+  '/campaigns': typeof AuthedCampaignsRoute
+  '/experiments': typeof AuthedExperimentsRoute
+  '/preview-library': typeof AuthedPreviewLibraryRoute
   '/requests': typeof AuthedRequestsRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/ux-analytics': typeof AuthedUxAnalyticsRoute
+  '/analytics-workbench/$section': typeof AuthedAnalyticsWorkbenchSectionRoute
+  '/analytics/$section': typeof AuthedAnalyticsSectionRoute
   '/jobs/$id': typeof AuthedJobsIdRoute
   '/users/$id': typeof AuthedUsersIdRoute
+  '/ux-examples/$view': typeof AuthedUxExamplesViewRoute
+  '/analytics-workbench/': typeof AuthedAnalyticsWorkbenchIndexRoute
+  '/analytics/': typeof AuthedAnalyticsIndexRoute
   '/jobs/': typeof AuthedJobsIndexRoute
   '/users/': typeof AuthedUsersIndexRoute
+  '/ux-examples/': typeof AuthedUxExamplesIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/analytics-feature-concept': typeof AuthedAnalyticsFeatureConceptRoute
   '/backups': typeof AuthedBackupsRoute
+  '/campaigns': typeof AuthedCampaignsRoute
+  '/experiments': typeof AuthedExperimentsRoute
+  '/preview-library': typeof AuthedPreviewLibraryRoute
   '/requests': typeof AuthedRequestsRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/ux-analytics': typeof AuthedUxAnalyticsRoute
   '/': typeof AuthedIndexRoute
+  '/analytics-workbench/$section': typeof AuthedAnalyticsWorkbenchSectionRoute
+  '/analytics/$section': typeof AuthedAnalyticsSectionRoute
   '/jobs/$id': typeof AuthedJobsIdRoute
   '/users/$id': typeof AuthedUsersIdRoute
+  '/ux-examples/$view': typeof AuthedUxExamplesViewRoute
+  '/analytics-workbench': typeof AuthedAnalyticsWorkbenchIndexRoute
+  '/analytics': typeof AuthedAnalyticsIndexRoute
   '/jobs': typeof AuthedJobsIndexRoute
   '/users': typeof AuthedUsersIndexRoute
+  '/ux-examples': typeof AuthedUxExamplesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authed/analytics-feature-concept': typeof AuthedAnalyticsFeatureConceptRoute
   '/_authed/backups': typeof AuthedBackupsRoute
+  '/_authed/campaigns': typeof AuthedCampaignsRoute
+  '/_authed/experiments': typeof AuthedExperimentsRoute
+  '/_authed/preview-library': typeof AuthedPreviewLibraryRoute
   '/_authed/requests': typeof AuthedRequestsRoute
+  '/_authed/settings': typeof AuthedSettingsRoute
+  '/_authed/ux-analytics': typeof AuthedUxAnalyticsRoute
   '/_authed/': typeof AuthedIndexRoute
+  '/_authed/analytics-workbench/$section': typeof AuthedAnalyticsWorkbenchSectionRoute
+  '/_authed/analytics/$section': typeof AuthedAnalyticsSectionRoute
   '/_authed/jobs/$id': typeof AuthedJobsIdRoute
   '/_authed/users/$id': typeof AuthedUsersIdRoute
+  '/_authed/ux-examples/$view': typeof AuthedUxExamplesViewRoute
+  '/_authed/analytics-workbench/': typeof AuthedAnalyticsWorkbenchIndexRoute
+  '/_authed/analytics/': typeof AuthedAnalyticsIndexRoute
   '/_authed/jobs/': typeof AuthedJobsIndexRoute
   '/_authed/users/': typeof AuthedUsersIndexRoute
+  '/_authed/ux-examples/': typeof AuthedUxExamplesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/analytics-feature-concept'
     | '/backups'
+    | '/campaigns'
+    | '/experiments'
+    | '/preview-library'
     | '/requests'
+    | '/settings'
+    | '/ux-analytics'
+    | '/analytics-workbench/$section'
+    | '/analytics/$section'
     | '/jobs/$id'
     | '/users/$id'
+    | '/ux-examples/$view'
+    | '/analytics-workbench/'
+    | '/analytics/'
     | '/jobs/'
     | '/users/'
+    | '/ux-examples/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/analytics-feature-concept'
     | '/backups'
+    | '/campaigns'
+    | '/experiments'
+    | '/preview-library'
     | '/requests'
+    | '/settings'
+    | '/ux-analytics'
     | '/'
+    | '/analytics-workbench/$section'
+    | '/analytics/$section'
     | '/jobs/$id'
     | '/users/$id'
+    | '/ux-examples/$view'
+    | '/analytics-workbench'
+    | '/analytics'
     | '/jobs'
     | '/users'
+    | '/ux-examples'
   id:
     | '__root__'
     | '/_authed'
     | '/login'
+    | '/_authed/analytics-feature-concept'
     | '/_authed/backups'
+    | '/_authed/campaigns'
+    | '/_authed/experiments'
+    | '/_authed/preview-library'
     | '/_authed/requests'
+    | '/_authed/settings'
+    | '/_authed/ux-analytics'
     | '/_authed/'
+    | '/_authed/analytics-workbench/$section'
+    | '/_authed/analytics/$section'
     | '/_authed/jobs/$id'
     | '/_authed/users/$id'
+    | '/_authed/ux-examples/$view'
+    | '/_authed/analytics-workbench/'
+    | '/_authed/analytics/'
     | '/_authed/jobs/'
     | '/_authed/users/'
+    | '/_authed/ux-examples/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/analytics-feature-concept': {
+      id: '/_authed/analytics-feature-concept'
+      path: '/analytics-feature-concept'
+      fullPath: '/analytics-feature-concept'
+      preLoaderRoute: typeof AuthedAnalyticsFeatureConceptRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/backups': {
       id: '/_authed/backups'
       path: '/backups'
@@ -165,11 +319,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedBackupsRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/campaigns': {
+      id: '/_authed/campaigns'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof AuthedCampaignsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/experiments': {
+      id: '/_authed/experiments'
+      path: '/experiments'
+      fullPath: '/experiments'
+      preLoaderRoute: typeof AuthedExperimentsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/preview-library': {
+      id: '/_authed/preview-library'
+      path: '/preview-library'
+      fullPath: '/preview-library'
+      preLoaderRoute: typeof AuthedPreviewLibraryRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/requests': {
       id: '/_authed/requests'
       path: '/requests'
       fullPath: '/requests'
       preLoaderRoute: typeof AuthedRequestsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/ux-analytics': {
+      id: '/_authed/ux-analytics'
+      path: '/ux-analytics'
+      fullPath: '/ux-analytics'
+      preLoaderRoute: typeof AuthedUxAnalyticsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/analytics-workbench/': {
+      id: '/_authed/analytics-workbench/'
+      path: '/analytics-workbench'
+      fullPath: '/analytics-workbench/'
+      preLoaderRoute: typeof AuthedAnalyticsWorkbenchIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/analytics-workbench/$section': {
+      id: '/_authed/analytics-workbench/$section'
+      path: '/analytics-workbench/$section'
+      fullPath: '/analytics-workbench/$section'
+      preLoaderRoute: typeof AuthedAnalyticsWorkbenchSectionRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/analytics/': {
+      id: '/_authed/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/analytics/$section': {
+      id: '/_authed/analytics/$section'
+      path: '/analytics/$section'
+      fullPath: '/analytics/$section'
+      preLoaderRoute: typeof AuthedAnalyticsSectionRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/jobs/': {
@@ -200,27 +417,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedUsersIdRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/ux-examples/': {
+      id: '/_authed/ux-examples/'
+      path: '/ux-examples'
+      fullPath: '/ux-examples/'
+      preLoaderRoute: typeof AuthedUxExamplesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/ux-examples/$view': {
+      id: '/_authed/ux-examples/$view'
+      path: '/ux-examples/$view'
+      fullPath: '/ux-examples/$view'
+      preLoaderRoute: typeof AuthedUxExamplesViewRouteImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
 interface AuthedRouteChildren {
+  AuthedAnalyticsFeatureConceptRoute: typeof AuthedAnalyticsFeatureConceptRoute
   AuthedBackupsRoute: typeof AuthedBackupsRoute
+  AuthedCampaignsRoute: typeof AuthedCampaignsRoute
+  AuthedExperimentsRoute: typeof AuthedExperimentsRoute
+  AuthedPreviewLibraryRoute: typeof AuthedPreviewLibraryRoute
   AuthedRequestsRoute: typeof AuthedRequestsRoute
+  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedUxAnalyticsRoute: typeof AuthedUxAnalyticsRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedAnalyticsWorkbenchSectionRoute: typeof AuthedAnalyticsWorkbenchSectionRoute
+  AuthedAnalyticsSectionRoute: typeof AuthedAnalyticsSectionRoute
   AuthedJobsIdRoute: typeof AuthedJobsIdRoute
   AuthedUsersIdRoute: typeof AuthedUsersIdRoute
+  AuthedUxExamplesViewRoute: typeof AuthedUxExamplesViewRoute
+  AuthedAnalyticsWorkbenchIndexRoute: typeof AuthedAnalyticsWorkbenchIndexRoute
+  AuthedAnalyticsIndexRoute: typeof AuthedAnalyticsIndexRoute
   AuthedJobsIndexRoute: typeof AuthedJobsIndexRoute
   AuthedUsersIndexRoute: typeof AuthedUsersIndexRoute
+  AuthedUxExamplesIndexRoute: typeof AuthedUxExamplesIndexRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedAnalyticsFeatureConceptRoute: AuthedAnalyticsFeatureConceptRoute,
   AuthedBackupsRoute: AuthedBackupsRoute,
+  AuthedCampaignsRoute: AuthedCampaignsRoute,
+  AuthedExperimentsRoute: AuthedExperimentsRoute,
+  AuthedPreviewLibraryRoute: AuthedPreviewLibraryRoute,
   AuthedRequestsRoute: AuthedRequestsRoute,
+  AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedUxAnalyticsRoute: AuthedUxAnalyticsRoute,
   AuthedIndexRoute: AuthedIndexRoute,
+  AuthedAnalyticsWorkbenchSectionRoute: AuthedAnalyticsWorkbenchSectionRoute,
+  AuthedAnalyticsSectionRoute: AuthedAnalyticsSectionRoute,
   AuthedJobsIdRoute: AuthedJobsIdRoute,
   AuthedUsersIdRoute: AuthedUsersIdRoute,
+  AuthedUxExamplesViewRoute: AuthedUxExamplesViewRoute,
+  AuthedAnalyticsWorkbenchIndexRoute: AuthedAnalyticsWorkbenchIndexRoute,
+  AuthedAnalyticsIndexRoute: AuthedAnalyticsIndexRoute,
   AuthedJobsIndexRoute: AuthedJobsIndexRoute,
   AuthedUsersIndexRoute: AuthedUsersIndexRoute,
+  AuthedUxExamplesIndexRoute: AuthedUxExamplesIndexRoute,
 }
 
 const AuthedRouteWithChildren =

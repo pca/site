@@ -1,11 +1,14 @@
 import { ACTIVE_EVENTS, findEvent, isActiveEventId, officialRankingFormat } from "@pca/shared"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useHydrated, useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
 
 import { Methodology, SnapshotNote, StatisticsPage, StatisticsStatus } from "../components/statistics/StatisticsPage"
 import { RegionCards, StrengthResults } from "../components/statistics/StrengthResults"
+import { analytics } from "../lib/analytics"
 import { prefetchForPrerender, regionalStatisticsQuery } from "../lib/queries"
 import { pageHead } from "../lib/seo"
+import { FeedbackForm } from "../components/FeedbackForm"
 
 type TabId = "event" | "region"
 
@@ -44,8 +47,9 @@ function RegionalStatistics() {
   const activeTab = (hydrated && search.tab) || DEFAULTS.tab
   const selectedEvent = (hydrated && search.event) || DEFAULTS.event
 
-  const update = (next: Partial<StatisticsSearch>) =>
-    navigate({
+  const update = (next: Partial<StatisticsSearch>) => {
+    if (next.event && next.event !== selectedEvent) analytics.track("statistics_event_changed", { event_id: next.event })
+    return navigate({
       search: prev => {
         const merged = { ...prev, ...next }
         return {
@@ -56,9 +60,13 @@ function RegionalStatistics() {
       replace: true,
       resetScroll: false,
     })
+  }
 
   const query = useQuery(regionalStatisticsQuery(activeTab, selectedEvent))
   const data = query.data
+  useEffect(() => {
+    if (hydrated && data && !query.isError && !query.isPlaceholderData) analytics.contentView({ content_page: "statistics", view_id: activeTab, ...(activeTab === "event" ? { event_id: selectedEvent } : {}) })
+  }, [hydrated, data, query.isError, query.isPlaceholderData, activeTab, selectedEvent])
   const selectedEventData = findEvent(selectedEvent)
 
   return (
@@ -101,6 +109,7 @@ function RegionalStatistics() {
           <SnapshotNote snapshot={data.snapshot} className="statistics-snapshot-after-results" />
         </section>
       )}
+      {hydrated&&<FeedbackForm context={{page:"statistics",event:activeTab==="event"?selectedEvent:"",region:"",format:"",view:activeTab,snapshot:data?.snapshot?String(data.snapshot.id):""}}/>}
     </StatisticsPage>
   )
 }

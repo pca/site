@@ -11,8 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as R404RouteImport } from './routes/404'
+import { Route as CompetitionBreakdownRouteImport } from './routes/competition-breakdown'
+import { Route as CompetitionRecapRouteImport } from './routes/competition-recap'
 import { Route as GrowthStatisticsRouteImport } from './routes/growth-statistics'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as MaintenanceRouteImport } from './routes/maintenance'
+import { Route as MilestonesRouteImport } from './routes/milestones'
+import { Route as PerformanceRouteImport } from './routes/performance'
+import { Route as RegionPulseRouteImport } from './routes/region-pulse'
 import { Route as RegionalRankingsRouteImport } from './routes/regional-rankings'
 import { Route as RegionalStatisticsRouteImport } from './routes/regional-statistics'
 
@@ -26,14 +32,44 @@ const R404Route = R404RouteImport.update({
   path: '/404',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompetitionBreakdownRoute = CompetitionBreakdownRouteImport.update({
+  id: '/competition-breakdown',
+  path: '/competition-breakdown',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionRecapRoute = CompetitionRecapRouteImport.update({
+  id: '/competition-recap',
+  path: '/competition-recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GrowthStatisticsRoute = GrowthStatisticsRouteImport.update({
   id: '/growth-statistics',
   path: '/growth-statistics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MaintenanceRoute = MaintenanceRouteImport.update({
   id: '/maintenance',
   path: '/maintenance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MilestonesRoute = MilestonesRouteImport.update({
+  id: '/milestones',
+  path: '/milestones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerformanceRoute = PerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegionPulseRoute = RegionPulseRouteImport.update({
+  id: '/region-pulse',
+  path: '/region-pulse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegionalRankingsRoute = RegionalRankingsRouteImport.update({
@@ -50,16 +86,28 @@ const RegionalStatisticsRoute = RegionalStatisticsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/competition-breakdown': typeof CompetitionBreakdownRoute
+  '/competition-recap': typeof CompetitionRecapRoute
   '/growth-statistics': typeof GrowthStatisticsRoute
+  '/insights': typeof InsightsRoute
   '/maintenance': typeof MaintenanceRoute
+  '/milestones': typeof MilestonesRoute
+  '/performance': typeof PerformanceRoute
+  '/region-pulse': typeof RegionPulseRoute
   '/regional-rankings': typeof RegionalRankingsRoute
   '/regional-statistics': typeof RegionalStatisticsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/competition-breakdown': typeof CompetitionBreakdownRoute
+  '/competition-recap': typeof CompetitionRecapRoute
   '/growth-statistics': typeof GrowthStatisticsRoute
+  '/insights': typeof InsightsRoute
   '/maintenance': typeof MaintenanceRoute
+  '/milestones': typeof MilestonesRoute
+  '/performance': typeof PerformanceRoute
+  '/region-pulse': typeof RegionPulseRoute
   '/regional-rankings': typeof RegionalRankingsRoute
   '/regional-statistics': typeof RegionalStatisticsRoute
 }
@@ -67,8 +115,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/competition-breakdown': typeof CompetitionBreakdownRoute
+  '/competition-recap': typeof CompetitionRecapRoute
   '/growth-statistics': typeof GrowthStatisticsRoute
+  '/insights': typeof InsightsRoute
   '/maintenance': typeof MaintenanceRoute
+  '/milestones': typeof MilestonesRoute
+  '/performance': typeof PerformanceRoute
+  '/region-pulse': typeof RegionPulseRoute
   '/regional-rankings': typeof RegionalRankingsRoute
   '/regional-statistics': typeof RegionalStatisticsRoute
 }
@@ -77,24 +131,42 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/404'
+    | '/competition-breakdown'
+    | '/competition-recap'
     | '/growth-statistics'
+    | '/insights'
     | '/maintenance'
+    | '/milestones'
+    | '/performance'
+    | '/region-pulse'
     | '/regional-rankings'
     | '/regional-statistics'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/404'
+    | '/competition-breakdown'
+    | '/competition-recap'
     | '/growth-statistics'
+    | '/insights'
     | '/maintenance'
+    | '/milestones'
+    | '/performance'
+    | '/region-pulse'
     | '/regional-rankings'
     | '/regional-statistics'
   id:
     | '__root__'
     | '/'
     | '/404'
+    | '/competition-breakdown'
+    | '/competition-recap'
     | '/growth-statistics'
+    | '/insights'
     | '/maintenance'
+    | '/milestones'
+    | '/performance'
+    | '/region-pulse'
     | '/regional-rankings'
     | '/regional-statistics'
   fileRoutesById: FileRoutesById
@@ -102,8 +174,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
+  CompetitionBreakdownRoute: typeof CompetitionBreakdownRoute
+  CompetitionRecapRoute: typeof CompetitionRecapRoute
   GrowthStatisticsRoute: typeof GrowthStatisticsRoute
+  InsightsRoute: typeof InsightsRoute
   MaintenanceRoute: typeof MaintenanceRoute
+  MilestonesRoute: typeof MilestonesRoute
+  PerformanceRoute: typeof PerformanceRoute
+  RegionPulseRoute: typeof RegionPulseRoute
   RegionalRankingsRoute: typeof RegionalRankingsRoute
   RegionalStatisticsRoute: typeof RegionalStatisticsRoute
 }
@@ -124,6 +202,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof R404RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/competition-breakdown': {
+      id: '/competition-breakdown'
+      path: '/competition-breakdown'
+      fullPath: '/competition-breakdown'
+      preLoaderRoute: typeof CompetitionBreakdownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competition-recap': {
+      id: '/competition-recap'
+      path: '/competition-recap'
+      fullPath: '/competition-recap'
+      preLoaderRoute: typeof CompetitionRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/growth-statistics': {
       id: '/growth-statistics'
       path: '/growth-statistics'
@@ -131,11 +223,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GrowthStatisticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/maintenance': {
       id: '/maintenance'
       path: '/maintenance'
       fullPath: '/maintenance'
       preLoaderRoute: typeof MaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/milestones': {
+      id: '/milestones'
+      path: '/milestones'
+      fullPath: '/milestones'
+      preLoaderRoute: typeof MilestonesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/performance': {
+      id: '/performance'
+      path: '/performance'
+      fullPath: '/performance'
+      preLoaderRoute: typeof PerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/region-pulse': {
+      id: '/region-pulse'
+      path: '/region-pulse'
+      fullPath: '/region-pulse'
+      preLoaderRoute: typeof RegionPulseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/regional-rankings': {
@@ -158,8 +278,14 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
+  CompetitionBreakdownRoute: CompetitionBreakdownRoute,
+  CompetitionRecapRoute: CompetitionRecapRoute,
   GrowthStatisticsRoute: GrowthStatisticsRoute,
+  InsightsRoute: InsightsRoute,
   MaintenanceRoute: MaintenanceRoute,
+  MilestonesRoute: MilestonesRoute,
+  PerformanceRoute: PerformanceRoute,
+  RegionPulseRoute: RegionPulseRoute,
   RegionalRankingsRoute: RegionalRankingsRoute,
   RegionalStatisticsRoute: RegionalStatisticsRoute,
 }

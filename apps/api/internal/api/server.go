@@ -157,6 +157,7 @@ func (s *Server) Handler(mounts []Mount) (handler http.Handler, err error) {
 		"POST": s.handleLogout,
 	})
 	get("/user", s.requireUser(s.handleUser))
+	s.route(mux, "/user/feedback", map[string]http.HandlerFunc{"POST": s.requireUser(s.handleFeedback)})
 	s.route(mux, "/user/region-update-requests", map[string]http.HandlerFunc{
 		"GET":  s.requireUser(s.handleListRequests),
 		"POST": s.requireUser(s.handleCreateRequest),

@@ -1,0 +1,92 @@
+/* Admin-only theme; the public website has its own entry point and styles. */
+:root { color-scheme: light; }
+.admin-theme-toggle {
+  display: inline-flex; align-items: center; gap: 8px; width: 100%; max-width: 220px;
+  border: 1px solid #d4d4d8; border-radius: 6px; background: #fff; color: #52525b;
+  padding: 7px 9px; font-size: 12px; text-align: left;
+}
+.admin-theme-toggle:hover { background: #f4f4f5; }
+.admin-theme-toggle:focus-visible { outline: 3px solid #dfb322; outline-offset: 3px; }
+.admin-theme-state { margin-left: auto; font-size: 10px; font-weight: 600; }
+
+:root[data-admin-theme="dark"] {
+  color-scheme: dark;
+  --admin-bg: #101720;
+  --admin-surface: #18222e;
+  --admin-raised: #202e3d;
+  --admin-line: #354657;
+  --admin-text: #e0e9f1;
+  --admin-muted: #acbccb;
+  --admin-link: #8ccbf5;
+  --color-ink: #8ccbf5;
+}
+html[data-admin-theme="dark"] body { background: var(--admin-bg); color: var(--admin-text); }
+html[data-admin-theme="dark"] .admin-theme-toggle { background: var(--admin-raised); border-color: var(--admin-line); color: var(--admin-text); }
+html[data-admin-theme="dark"] .admin-theme-toggle:hover { background: #293b4e; }
+html[data-admin-theme="dark"] .admin-theme-state { color: var(--admin-link); }
+
+/* Existing Tailwind-based admin screens and shared navigation. */
+@layer utilities {
+  html[data-admin-theme="dark"] :is(.bg-white, .bg-zinc-50) { background-color: var(--admin-surface); }
+  html[data-admin-theme="dark"] :is(.bg-zinc-100, .bg-zinc-200, .hover\:bg-zinc-50:hover, .hover\:bg-zinc-100:hover) { background-color: var(--admin-raised); }
+  html[data-admin-theme="dark"] :is(.text-zinc-900, .text-zinc-800, .text-zinc-700) { color: var(--admin-text); }
+  html[data-admin-theme="dark"] :is(.text-zinc-600, .text-zinc-500, .text-zinc-400) { color: var(--admin-muted); }
+  html[data-admin-theme="dark"] :is(.border-zinc-100, .border-zinc-200, .border-zinc-300) { border-color: var(--admin-line); }
+  html[data-admin-theme="dark"] :is(.bg-brand, .admin-brand) { color: #18181b; }
+}
+@layer components {
+  html[data-admin-theme="dark"] :is(.btn, .input, .card, .select-trigger, .select-popover, .checkbox) { background-color: var(--admin-surface); border-color: var(--admin-line); color: var(--admin-text); }
+  html[data-admin-theme="dark"] :is(.btn:hover, .select-option[data-active], .table tbody tr:hover) { background-color: var(--admin-raised); }
+  html[data-admin-theme="dark"] .btn-primary { background: #8ccbf5; border-color: #8ccbf5; color: #102535; }
+  html[data-admin-theme="dark"] .btn-primary:hover { background: #b2ddfa; }
+  html[data-admin-theme="dark"] .btn-approve { background: #176348; border-color: #308c6b; color: #fff; }
+  html[data-admin-theme="dark"] .btn-deny { background: #8c343c; border-color: #b65962; color: #fff; }
+  html[data-admin-theme="dark"] :is(.label, .table th) { color: var(--admin-muted); }
+  html[data-admin-theme="dark"] :is(.table th, .table td) { border-color: var(--admin-line); }
+  html[data-admin-theme="dark"] .table th { background: var(--admin-raised); }
+  html[data-admin-theme="dark"] .select-option { color: var(--admin-text); }
+  html[data-admin-theme="dark"] .checkbox:checked { background: #226995; }
+}
+
+/* Current analytics workbench, including tables, help, forms and design pages. */
+html[data-admin-theme="dark"] .wb-workspace {
+  --wb-ink: var(--admin-text); --wb-muted: var(--admin-muted);
+  --wb-line: var(--admin-line); --wb-blue: var(--admin-link);
+}
+html[data-admin-theme="dark"] .wb-workspace :is(.wb-panel, .wb-stat, input, select, textarea, .wb-help[open]>div, button:not(.wb-row-link)) {
+  background: var(--admin-surface); border-color: var(--admin-line);
+}
+html[data-admin-theme="dark"] .wb-workspace :is(.wb-nav a, .wb-nav small, .wb-nav>div>span, .wb-help>summary) { color: var(--admin-muted); }
+html[data-admin-theme="dark"] .wb-workspace :is(.wb-nav a:hover, tr.is-selected, .wb-row-detail, .wb-source, .wb-steps b) { background: #1b3448; border-color: #3d607a; color: var(--admin-link); }
+:root[data-admin-theme="dark"] .wb-workspace .wb-source.is-sample,
+html[data-admin-theme="dark"] .wb-workspace .wb-warning { background: #302a1b; border-color: #786538; color: #f2d482; }
+html[data-admin-theme="dark"] .wb-source.is-sample span { color: #d4c69e; }
+html[data-admin-theme="dark"] .wb-workspace :is(.wb-badge, .wb-design-notice, .wb-notes article, thead th, .wb-map>a:hover) { background: var(--admin-raised); border-color: var(--admin-line); }
+html[data-admin-theme="dark"] .wb-badge { color: var(--admin-muted); }
+html[data-admin-theme="dark"] .wb-workspace .wb-blue,
+html[data-admin-theme="dark"] .wb-workspace .wb-nav a.is-active { background: #1b3b52; color: #9bd4fb; }
+html[data-admin-theme="dark"] .wb-workspace .wb-gold { background: #42361c; color: #f2d482; }
+html[data-admin-theme="dark"] .wb-workspace .wb-green { background: #1c3b31; color: #a0dec1; }
+html[data-admin-theme="dark"] .wb-workspace :is(tbody :is(th,td), thead th, .wb-start-links a, .wb-panel details:not(.wb-help), .wb-help>summary, .wb-empty) { border-color: var(--admin-line); }
+html[data-admin-theme="dark"] .wb-workspace tbody th small { color: #dec57b; }
+
+/* Earlier previews remain available in either appearance. */
+html[data-admin-theme="dark"] .aw-workspace {
+  --aw-ink: var(--admin-text); --aw-muted: var(--admin-muted);
+  --aw-border: var(--admin-line); --aw-blue: var(--admin-link);
+}
+html[data-admin-theme="dark"] :is(.aw-workspace, .ux-page) :is(input, select, textarea, .aw-panel, .aw-stat, .aw-help[open]>div, .ux-panel, .ux-metric, .ux-source, .ux-experiment-card, .ux-hypothesis, .ux-variant) { background: var(--admin-surface); color: var(--admin-text); border-color: var(--admin-line); }
+html[data-admin-theme="dark"] :is(.aw-workspace, .ux-page) :is(h1, h2, h3, strong) { color: var(--admin-text); }
+html[data-admin-theme="dark"] .ux-page { color: var(--admin-text); }
+html[data-admin-theme="dark"] :is(.aw-workspace, .ux-page) :is(a, summary, .ux-text-button, .ux-text-link) { color: var(--admin-link); }
+html[data-admin-theme="dark"] :is(.aw-notice, .ux-preview-note) { background: #302a1b; border-color: #786538; color: #e4cd91; }
+html[data-admin-theme="dark"] .ux-preview-note :is(strong, span, a) { color: #e4cd91; }
+html[data-admin-theme="dark"] .aw-workspace :is(.aw-library-card, .aw-button, .aw-message-list>button, .aw-experiment-list>button) { background: var(--admin-surface); color: var(--admin-text); border-color: var(--admin-line); }
+html[data-admin-theme="dark"] .aw-workspace :is(.aw-table thead th, .aw-switch, .aw-callout, .aw-cell-detail, .aw-step-number, .aw-paths li>div>span>span, .aw-library-card:hover, .aw-message-list>button.is-selected, .aw-experiment-list>button.is-selected) { background: var(--admin-raised); color: var(--admin-text); border-color: var(--admin-line); }
+html[data-admin-theme="dark"] .aw-workspace :is(.aw-table th, .aw-table td, .aw-details) { border-color: var(--admin-line); }
+html[data-admin-theme="dark"] .aw-workspace :is(.aw-version, .aw-badge) { background: var(--admin-raised); color: var(--admin-muted); }
+html[data-admin-theme="dark"] .aw-workspace :is(.aw-badge-gold, .aw-validation) { background: #42361c; color: #f2d482; }
+html[data-admin-theme="dark"] .aw-workspace .aw-badge-blue { background: #1b3b52; color: #9bd4fb; }
+html[data-admin-theme="dark"] .aw-workspace .aw-badge-green { background: #1c3b31; color: #a0dec1; }
+html[data-admin-theme="dark"] .aw-switch button[aria-pressed="true"] { background: var(--admin-surface); color: var(--admin-link); }
+html[data-admin-theme="dark"] .aw-chart text { fill: var(--admin-muted); }

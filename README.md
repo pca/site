@@ -84,12 +84,33 @@ PRERENDER_API_URL=https://api.pinoycubers.org/api
 VITE_SITE_URL=https://pinoycubers.org
 VITE_WCA_CLIENT_ID=...
 VITE_GA_MEASUREMENT_ID=...
+VITE_ANALYTICS_ENABLED=0               # enable only after privacy/tag review
 ```
 
 Register each `/regional-rankings` URL in `WCA_ALLOWED_CALLBACK_URLS` as a
 redirect URI of the WCA OAuth application (scope `public`). Prerendered HTML
 refreshes only on a Netlify rebuild. Maintenance mode, switched on in the
 admin, is served by an edge function that returns 503.
+
+Google Analytics production collection and verification steps are in
+[`docs/google-analytics.md`](docs/google-analytics.md). The production Netlify
+context configures `G-EGQD2JBT77`, but collection defaults to off. Confirm the
+intended stream, review consent and overlapping measurement, then explicitly
+set `VITE_ANALYTICS_ENABLED=1` and rebuild to enable the curated collection.
+For beta, use the [separate property and opt-in](docs/google-analytics.md#optional-beta-only-collection).
+
+The local staff analytics workspace starts at `/admin/analytics-workbench/pages`.
+Its [current implementation scope](docs/analytics-completion-2026-10-25.md) includes
+bounded journey/retention reports, an account-only feedback workflow and saved
+experiment planning. Experiment delivery is not implemented or activated.
+GA4 reporting is opt-in server configuration,
+not activated by the public G-code. The [preview directory](docs/analytics-preview-links.md)
+preserves every earlier layout and lists all current pages.
+Run `node scripts/verify-analytics.mjs` with Node 24 for the local analytics release
+checks. [Verification scope and remaining live checks](docs/analytics-verification.md)
+explain what a passing simulated run does—and does not—prove.
+The [deployment checklist](docs/analytics-deployment.md) covers the optional
+read-only Google credential mount and the separate public enable switch.
 
 To run the whole stack in Docker instead: `cp .env.example .env`, then
 `docker compose up -d --build`, and open <http://localhost:8000>.

@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pca/backend/internal/analyticsreport"
 	"github.com/pca/backend/internal/auth"
 	"github.com/pca/backend/internal/config"
 	"github.com/pca/backend/internal/db"
@@ -44,10 +45,11 @@ type Admin struct {
 	limiter        *loginLimiter
 	backupMu       sync.Mutex
 	maintenance    *maintenance.Switch
+	analytics      *analyticsreport.Client
 }
 
 func New(cfg config.Config, d *db.DB, log *slog.Logger, regionsChanged func(context.Context) error, m *maintenance.Switch) *Admin {
-	return &Admin{cfg: cfg, db: d, log: log, regionsChanged: regionsChanged, limiter: newLoginLimiter(), maintenance: m}
+	return &Admin{cfg: cfg, db: d, log: log, regionsChanged: regionsChanged, limiter: newLoginLimiter(), maintenance: m, analytics: analyticsreport.New(cfg.GA4PropertyID, cfg.GA4ServiceAccountFile)}
 }
 
 func (a *Admin) Handler() http.Handler {
@@ -58,6 +60,16 @@ func (a *Admin) Handler() http.Handler {
 	mux.HandleFunc("DELETE "+p+"/session", a.staff(a.logout))
 
 	mux.HandleFunc("GET "+p+"/dashboard", a.staff(a.dashboard))
+	mux.HandleFunc("GET "+p+"/analytics/status", a.staff(a.analyticsStatus))
+	mux.HandleFunc("GET "+p+"/analytics/report", a.staff(a.analyticsReport))
+	mux.HandleFunc("GET "+p+"/analytics/release", a.staff(a.analyticsRelease))
+	mux.HandleFunc("GET "+p+"/analytics/behavior", a.staff(a.analyticsBehavior))
+	mux.HandleFunc("GET "+p+"/feedback", a.staff(a.feedbackList))
+	mux.HandleFunc("GET "+p+"/feedback/{id}", a.staff(a.feedbackDetail))
+	mux.HandleFunc("PATCH "+p+"/feedback/{id}", a.staff(a.feedbackReview))
+	mux.HandleFunc("GET "+p+"/experiment-plans", a.staff(a.experimentList))
+	mux.HandleFunc("POST "+p+"/experiment-plans", a.staff(a.experimentSave))
+	mux.HandleFunc("PATCH "+p+"/experiment-plans/{id}", a.staff(a.experimentSave))
 	mux.HandleFunc("GET "+p+"/requests", a.staff(a.listRequests))
 	mux.HandleFunc("POST "+p+"/requests/decide", a.staff(a.decideRequests))
 	mux.HandleFunc("GET "+p+"/users", a.staff(a.listUsers))
